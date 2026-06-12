@@ -26,6 +26,8 @@ import { AdzunaClient } from "../adzunaClient.js";
 import { CareerjetClient } from "../careerjetClient.js";
 import { FtClient, FtOffer, FtSearchParams } from "../ftClient.js";
 import { LbaClient } from "../lbaClient.js";
+import { LeverClient } from "../leverClient.js";
+import { SmartRecruitersClient } from "../smartrecruitersClient.js";
 import { deleteProfile, getProfile, listProfiles, ProfileRow } from "../db.js";
 import { postFreshOffers, runProfile, postFilter } from "../poller.js";
 import { offerEmbed } from "./embed.js";
@@ -40,13 +42,15 @@ export function createBot(
   lba: LbaClient | null,
   adzuna: AdzunaClient | null,
   careerjet: CareerjetClient | null,
+  smartrecruiters: SmartRecruitersClient | null,
+  lever: LeverClient | null,
 ): Client {
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
   client.on("interactionCreate", async (i) => {
     try {
       if (i.isChatInputCommand()) {
-        if (i.commandName === "profile") await handleProfile(i, cfg, db, ft, lba, adzuna, careerjet, client);
+        if (i.commandName === "profile") await handleProfile(i, cfg, db, ft, lba, adzuna, careerjet, smartrecruiters, lever, client);
         else if (i.commandName === "jobs") await handleJobs(i, cfg, ft);
         else if (i.commandName === "setup") await handleSetup(i);
         else if (i.commandName === "generate") await handleGenerate(i);
@@ -57,7 +61,7 @@ export function createBot(
       } else if (i.isStringSelectMenu() && i.customId.startsWith("jobscout:contract:")) {
         await showSearchModal(i);
       } else if (i.isModalSubmit() && i.customId.startsWith("jobscout:create-search-modal:")) {
-        await handleSearchModal(i, cfg, db, ft, lba, adzuna, careerjet, client);
+        await handleSearchModal(i, cfg, db, ft, lba, adzuna, careerjet, smartrecruiters, lever, client);
       }
     } catch (err) {
       console.error("[discord] interaction error:", (err as Error).message);
@@ -295,6 +299,8 @@ async function handleSearchModal(
   lba: LbaClient | null,
   adzuna: AdzunaClient | null,
   careerjet: CareerjetClient | null,
+  smartrecruiters: SmartRecruitersClient | null,
+  lever: LeverClient | null,
   client: Client,
 ): Promise<void> {
   if (!i.guild) {
@@ -425,7 +431,7 @@ async function handleSearchModal(
   if (profile) {
     await channel.send("Recherche instantanée en cours...").catch(() => {});
     try {
-      const fresh = await runProfile(ft, lba, adzuna, careerjet, db, profile, cfg.excludedHosts, cfg.offerMaxAgeDays);
+      const fresh = await runProfile(ft, lba, adzuna, careerjet, smartrecruiters, lever, db, profile, cfg.excludedHosts, cfg.offerMaxAgeDays);
       const posted = await postFreshOffers(db, profile, fresh, (pp, o, notify) => postOffer(client, pp, o, notify));
       if (posted > 0) {
         summary = `Recherche créée : <#${channel.id}> — ${posted} offre(s) postée(s).`;
@@ -587,6 +593,8 @@ async function handleProfile(
   lba: LbaClient | null,
   adzuna: AdzunaClient | null,
   careerjet: CareerjetClient | null,
+  smartrecruiters: SmartRecruitersClient | null,
+  lever: LeverClient | null,
   client: Client,
 ): Promise<void> {
   if (!i.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
@@ -681,7 +689,7 @@ async function handleProfile(
       return;
     }
     await i.deferReply({ flags: MessageFlags.Ephemeral });
-    const fresh = await runProfile(ft, lba, adzuna, careerjet, db, p, cfg.excludedHosts, cfg.offerMaxAgeDays);
+    const fresh = await runProfile(ft, lba, adzuna, careerjet, smartrecruiters, lever, db, p, cfg.excludedHosts, cfg.offerMaxAgeDays);
     const posted = await postFreshOffers(db, p, fresh, (pp, o, notify) => postOffer(client, pp, o, notify));
     await i.editReply(`Pipeline exécuté : ${posted} offre(s) postée(s).`);
   }

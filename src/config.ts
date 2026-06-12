@@ -5,6 +5,8 @@ export interface Config {
   adzunaAppId?: string;
   adzunaAppKey?: string;
   careerjetApiKey?: string;
+  smartrecruitersCompanies: string[];
+  leverCompanies: string[];
   careerjetUserIp: string;
   careerjetUserAgent: string;
   careerjetReferer?: string;
@@ -55,6 +57,11 @@ export function loadConfig(): Config {
     adzunaAppId: process.env.ADZUNA_APP_ID || undefined,
     adzunaAppKey: process.env.ADZUNA_APP_KEY || undefined,
     careerjetApiKey: process.env.CAREERJET_API_KEY || undefined,
+    // Slugs vérifiés le 2026-06-12 (probe scripts/probe-ats.ts)
+    smartrecruitersCompanies: (process.env.SMARTRECRUITERS_COMPANIES ?? "Ubisoft2,Wavestone1")
+      .split(",").map((s) => s.trim()).filter(Boolean),
+    leverCompanies: (process.env.LEVER_COMPANIES ?? "qonto")
+      .split(",").map((s) => s.trim()).filter(Boolean),
     careerjetUserIp: process.env.CAREERJET_USER_IP || "127.0.0.1",
     careerjetUserAgent: process.env.CAREERJET_USER_AGENT || "JobSearcherBot/0.1",
     careerjetReferer: process.env.CAREERJET_REFERER || undefined,
