@@ -70,7 +70,29 @@ export function buildCommands() {
     .addIntegerOption((o) => o.setName("rayon").setDescription("Rayon km").setMinValue(0).setMaxValue(200))
     .addStringOption((o) => o.setName("titre").setDescription("Titres (csv)"));
 
-  return [profile.toJSON(), jobs.toJSON()];
+  const setup = new SlashCommandBuilder()
+    .setName("setup")
+    .setDescription("Installer les messages de création de recherche (admin)")
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addSubcommand((s) =>
+      s.setName("post").setDescription("Poster le bouton de création de recherche")
+        .addChannelOption((o) =>
+          o.setName("channel")
+            .setDescription("Salon où poster le bouton")
+            .addChannelTypes(ChannelType.GuildText))
+        .addChannelOption((o) =>
+          o.setName("category")
+            .setDescription("Catégorie où créer les salons privés")
+            .addChannelTypes(ChannelType.GuildCategory)));
+
+  const generate = new SlashCommandBuilder()
+    .setName("generate")
+    .setDescription("Générer les embeds du bot (admin)")
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addSubcommand((s) =>
+      s.setName("info").setDescription("Poster l'embed de présentation de Job Searcher"));
+
+  return [profile.toJSON(), jobs.toJSON(), setup.toJSON(), generate.toJSON()];
 }
 
 export async function registerCommands(cfg: Config): Promise<void> {

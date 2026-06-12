@@ -82,6 +82,14 @@ export function markSeen(db: Database.Database, profileId: number, offerId: stri
     .run(profileId, offerId);
 }
 
+export function deleteProfile(db: Database.Database, profileId: number): void {
+  const tx = db.transaction((id: number) => {
+    db.prepare("DELETE FROM seen_offers WHERE profile_id = ?").run(id);
+    db.prepare("DELETE FROM profiles WHERE id = ?").run(id);
+  });
+  tx(profileId);
+}
+
 export function purgeSeen(db: Database.Database, retentionDays: number): number {
   const res = db.prepare(
     "DELETE FROM seen_offers WHERE posted_at < datetime('now', ?)"

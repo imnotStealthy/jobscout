@@ -26,7 +26,7 @@ export interface FtSearchParams {
 }
 
 const TOKEN_URL =
-  "https://entreprise.francetravail.io/connexion/oauth2/access_token?realm=%2Fpartenaire";
+  "https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=%2Fpartenaire";
 const SEARCH_URL =
   "https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search";
 const SCOPE = "api_offresdemploiv2 o2dsoffre";
