@@ -335,6 +335,33 @@ export function offerSeenKey(o: FtOffer): string {
   return `id:${o.id}`;
 }
 
+// Poste un lot d'offres fraîches : notify sur la première postée, markSeen
+// (clé fingerprint + id source) après chaque envoi réussi. Retourne le nombre posté.
+export async function postFreshOffers(
+  db: Database.Database,
+  p: ProfileRow,
+  offers: FtOffer[],
+  post: (p: ProfileRow, o: FtOffer, notify: boolean) => Promise<void>,
+): Promise<number> {
+  let posted = 0;
+  for (const o of offers) {
+    try {
+      await post(p, o, posted === 0);
+      markSeen(db, p.id, offerSeenKey(o));
+      markSeen(db, p.id, o.id);
+      posted += 1;
+    } catch (err) {
+      if (isMissingDiscordChannel(err)) {
+        deleteProfile(db, p.id);
+        console.warn(`[poll] profile ${p.id} deleted: channel ${p.discord_channel_id} not found`);
+        break;
+      }
+      console.error(`[poll] post failed (profile ${p.id}, offer ${o.id}):`, (err as Error).message);
+    }
+  }
+  return posted;
+}
+
 export async function pollAll(
   ft: FtClient,
   lba: LbaClient | null,
@@ -346,22 +373,7 @@ export async function pollAll(
 ): Promise<void> {
   for (const p of listEnabledProfiles(db)) {
     const fresh = await runProfile(ft, lba, adzuna, careerjet, db, p, cfg.excludedHosts, cfg.offerMaxAgeDays);
-    for (let idx = 0; idx < fresh.length; idx += 1) {
-      const o = fresh[idx];
-      try {
-        await post(p, o, idx === 0);
-        markSeen(db, p.id, offerSeenKey(o));
-        markSeen(db, p.id, o.id);
-      } catch (err) {
-        const msg = (err as Error).message;
-        if (isMissingDiscordChannel(err)) {
-          deleteProfile(db, p.id);
-          console.warn(`[poll] profile ${p.id} deleted: channel ${p.discord_channel_id} not found`);
-          break;
-        }
-        console.error(`[poll] post failed (profile ${p.id}, offer ${o.id}):`, msg);
-      }
-    }
+    await postFreshOffers(db, p, fresh, post);
     if (fresh.length) console.log(`[poll] profile ${p.id} (${p.label}): ${fresh.length} new offers`);
   }
 }

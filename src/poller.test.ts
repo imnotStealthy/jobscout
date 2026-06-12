@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { ProfileRow } from "./db.js";
+import { hasSeen, openDb, ProfileRow } from "./db.js";
 import type { FtOffer } from "./ftClient.js";
-import { buildAdzunaQueries, buildCareerjetQueries, buildLbaQueries, postFilter } from "./poller.js";
+import {
+  buildAdzunaQueries, buildCareerjetQueries, buildLbaQueries,
+  offerSeenKey, postFilter, postFreshOffers,
+} from "./poller.js";
 
 function profile(overrides: Partial<ProfileRow>): ProfileRow {
   return {
@@ -68,6 +71,50 @@ describe("buildAdzunaQueries", () => {
         permanent: true,
       },
     ]);
+  });
+});
+
+describe("postFreshOffers", () => {
+  const makeDb = () => {
+    const db = openDb(":memory:");
+    db.prepare(
+      "INSERT INTO profiles (label, discord_channel_id, titres, keywords) VALUES ('t', '1', '[]', '[]')"
+    ).run();
+    return db;
+  };
+  const offers: FtOffer[] = [
+    { id: "adzuna:1", intitule: "Offre A", entreprise: { nom: "ACME" }, lieuTravail: { libelle: "Paris" } },
+    { id: "careerjet:2", intitule: "Offre B", entreprise: { nom: "Beta" }, lieuTravail: { libelle: "Lyon" } },
+  ];
+
+  it("notifie uniquement la première offre et marque les deux clés vues", async () => {
+    const db = makeDb();
+    const notifies: boolean[] = [];
+    const posted = await postFreshOffers(db, { id: 1 } as ProfileRow, offers,
+      async (_p, _o, notify) => { notifies.push(notify); });
+    expect(posted).toBe(2);
+    expect(notifies).toEqual([true, false]);
+    for (const o of offers) {
+      expect(hasSeen(db, 1, offerSeenKey(o))).toBe(true);
+      expect(hasSeen(db, 1, o.id)).toBe(true);
+    }
+  });
+
+  it("un second run ne reposte pas les offres déjà vues", async () => {
+    const db = makeDb();
+    await postFreshOffers(db, { id: 1 } as ProfileRow, offers, async () => {});
+    // même filtre que runProfile en sortie de pipeline
+    const fresh = offers.filter((o) => !hasSeen(db, 1, offerSeenKey(o)) && !hasSeen(db, 1, o.id));
+    expect(fresh).toEqual([]);
+  });
+
+  it("ne marque pas vue une offre dont le post a échoué", async () => {
+    const db = makeDb();
+    const posted = await postFreshOffers(db, { id: 1 } as ProfileRow, offers,
+      async (_p, o) => { if (o.id === "adzuna:1") throw new Error("send failed"); });
+    expect(posted).toBe(1);
+    expect(hasSeen(db, 1, "adzuna:1")).toBe(false);
+    expect(hasSeen(db, 1, "careerjet:2")).toBe(true);
   });
 });
 

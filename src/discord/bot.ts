@@ -26,8 +26,8 @@ import { AdzunaClient } from "../adzunaClient.js";
 import { CareerjetClient } from "../careerjetClient.js";
 import { FtClient, FtOffer, FtSearchParams } from "../ftClient.js";
 import { LbaClient } from "../lbaClient.js";
-import { deleteProfile, getProfile, listProfiles, ProfileRow, markSeen } from "../db.js";
-import { offerSeenKey, runProfile, postFilter } from "../poller.js";
+import { deleteProfile, getProfile, listProfiles, ProfileRow } from "../db.js";
+import { postFreshOffers, runProfile, postFilter } from "../poller.js";
 import { offerEmbed } from "./embed.js";
 import { csv, sane, toJsonArr } from "./commands.js";
 
@@ -57,7 +57,7 @@ export function createBot(
       } else if (i.isStringSelectMenu() && i.customId.startsWith("jobscout:contract:")) {
         await showSearchModal(i);
       } else if (i.isModalSubmit() && i.customId.startsWith("jobscout:create-search-modal:")) {
-        await handleSearchModal(i, db, client);
+        await handleSearchModal(i, cfg, db, ft, lba, adzuna, careerjet, client);
       }
     } catch (err) {
       console.error("[discord] interaction error:", (err as Error).message);
@@ -289,7 +289,12 @@ async function showSearchModal(i: StringSelectMenuInteraction): Promise<void> {
 
 async function handleSearchModal(
   i: ModalSubmitInteraction,
+  cfg: Config,
   db: Database.Database,
+  ft: FtClient,
+  lba: LbaClient | null,
+  adzuna: AdzunaClient | null,
+  careerjet: CareerjetClient | null,
   client: Client,
 ): Promise<void> {
   if (!i.guild) {
@@ -328,6 +333,10 @@ async function handleSearchModal(
     return;
   }
 
+  // Tout ce qui suit (fetch salons, création, recherche instantanée) dépasse les 3 s
+  // accordées avant réponse -> on défère tout de suite en éphémère.
+  await i.deferReply({ flags: MessageFlags.Ephemeral });
+
   const loc = parseLocation(location);
   const categoryId = i.customId.split(":")[2] || "current";
   const parent = categoryId === "current"
@@ -335,10 +344,7 @@ async function handleSearchModal(
     : categoryId;
   const activeSearches = await countUserSearches(db, client, i.user.id);
   if (activeSearches >= MAX_SEARCHES_PER_USER) {
-    await i.reply({
-      content: `Tu as déjà ${MAX_SEARCHES_PER_USER} recherches actives. Ferme une recherche avant d'en créer une nouvelle pour éviter de saturer les API.`,
-      flags: MessageFlags.Ephemeral,
-    });
+    await i.editReply(`Tu as déjà ${MAX_SEARCHES_PER_USER} recherches actives. Ferme une recherche avant d'en créer une nouvelle pour éviter de saturer les API.`);
     return;
   }
   const channel = await i.guild.channels.create({
@@ -410,7 +416,29 @@ async function handleSearchModal(
       .setStyle(ButtonStyle.Danger),
   );
   await channel.send({ content: `<@${i.user.id}>`, embeds: [created], components: [closeRow] });
-  await i.reply({ content: `Recherche créée : <#${channel.id}>`, flags: MessageFlags.Ephemeral });
+
+  // Recherche instantanée : même pipeline que le poll (runProfile route déjà
+  // alternance -> FT+LBA, autres contrats -> FT+Adzuna+Careerjet).
+  const profileId = Number(result.lastInsertRowid);
+  const profile = getProfile(db, profileId);
+  let summary = `Recherche créée : <#${channel.id}>`;
+  if (profile) {
+    await channel.send("Recherche instantanée en cours...").catch(() => {});
+    try {
+      const fresh = await runProfile(ft, lba, adzuna, careerjet, db, profile, cfg.excludedHosts, cfg.offerMaxAgeDays);
+      const posted = await postFreshOffers(db, profile, fresh, (pp, o, notify) => postOffer(client, pp, o, notify));
+      if (posted > 0) {
+        summary = `Recherche créée : <#${channel.id}> — ${posted} offre(s) postée(s).`;
+      } else {
+        await channel.send("Aucune offre trouvée maintenant. Ce salon reste actif et recevra les nouvelles offres automatiquement.").catch(() => {});
+        summary = `Recherche créée : <#${channel.id}> — aucune offre maintenant, surveillance active.`;
+      }
+    } catch (err) {
+      console.error(`[instant-search] profile ${profileId} failed:`, (err as Error).message);
+      summary = `Recherche créée : <#${channel.id}> — la recherche instantanée a rencontré un souci, le suivi automatique reste actif.`;
+    }
+  }
+  await i.editReply(summary);
 }
 
 async function countUserSearches(db: Database.Database, client: Client, userId: string): Promise<number> {
@@ -654,13 +682,8 @@ async function handleProfile(
     }
     await i.deferReply({ flags: MessageFlags.Ephemeral });
     const fresh = await runProfile(ft, lba, adzuna, careerjet, db, p, cfg.excludedHosts, cfg.offerMaxAgeDays);
-    for (let idx = 0; idx < fresh.length; idx += 1) {
-      const o = fresh[idx];
-      await postOffer(client, p, o, idx === 0);
-      markSeen(db, p.id, offerSeenKey(o));
-      markSeen(db, p.id, o.id);
-    }
-    await i.editReply(`Pipeline exécuté : ${fresh.length} offre(s) postée(s).`);
+    const posted = await postFreshOffers(db, p, fresh, (pp, o, notify) => postOffer(client, pp, o, notify));
+    await i.editReply(`Pipeline exécuté : ${posted} offre(s) postée(s).`);
   }
 }
 
