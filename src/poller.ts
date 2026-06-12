@@ -2,7 +2,6 @@ import type Database from "better-sqlite3";
 import type { Config } from "./config.js";
 import { AdzunaClient, AdzunaSearchParams } from "./adzunaClient.js";
 import { CareerjetClient, CareerjetSearchParams } from "./careerjetClient.js";
-import { DataforseoClient, DataforseoSearchParams } from "./dataforseoClient.js";
 import { FtClient, FtOffer, FtSearchParams, offerOriginUrl } from "./ftClient.js";
 import { LbaClient, LbaSearchParams } from "./lbaClient.js";
 import { deleteProfile, hasSeen, listEnabledProfiles, markSeen, ProfileRow } from "./db.js";
@@ -108,26 +107,6 @@ export function buildCareerjetQueries(p: ProfileRow): CareerjetSearchParams[] {
   const uniqLocations = [...new Set(locations)];
   const scopes = uniqLocations.length ? uniqLocations.map((location) => ({ ...base, location })) : [base];
   return scopes.flatMap((scope) => keywordValues.map((keywords) => ({ ...scope, keywords })));
-}
-
-// Google Jobs : source générale (tous contrats). La localisation passe dans le
-// keyword (location_name DataForSEO reste "France"). Le tri fiable se fait au
-// mapping (allowlist TRUSTED_HOSTS) puis dans postFilter.
-export function buildDataforseoQueries(p: ProfileRow): DataforseoSearchParams[] {
-  const keywords = parseJsonArr(p.keywords);
-  const contract = wantedContract(keywords.map(normalize));
-  const keywordValues = searchKeywordValues(keywords, contract);
-  if (!keywordValues.length) return [];
-
-  const locations = [
-    ...parseJsonArr(p.communes).map(externalLocationLabel),
-    ...parseJsonArr(p.departements).map(externalLocationLabel),
-    ...parseJsonArr(p.regions).map(regionLabel),
-  ].filter(Boolean);
-  const uniqLocations = [...new Set(locations)];
-  if (!uniqLocations.length) return keywordValues.map((keyword) => ({ keyword }));
-  return uniqLocations.flatMap((loc) =>
-    keywordValues.map((kw) => ({ keyword: `${kw} ${loc}` })));
 }
 
 function adzunaWhatValues(keywords: string[], contract: ReturnType<typeof wantedContract>): string[] {
@@ -302,7 +281,6 @@ export async function runProfile(
   lba: LbaClient | null,
   adzuna: AdzunaClient | null,
   careerjet: CareerjetClient | null,
-  dataforseo: DataforseoClient | null,
   db: Database.Database,
   p: ProfileRow,
   excludedHosts: string[],
@@ -338,14 +316,6 @@ export async function runProfile(
       for (const o of await careerjet.search(q)) seen.set(offerSeenKey(o), o);
     } catch (err) {
       console.error(`[poll] profile ${p.id} Careerjet query failed:`, (err as Error).message);
-    }
-  }
-  for (const q of buildDataforseoQueries(p)) {
-    if (!dataforseo) break;
-    try {
-      for (const o of await dataforseo.search(q)) seen.set(offerSeenKey(o), o);
-    } catch (err) {
-      console.error(`[poll] profile ${p.id} DataForSEO query failed:`, (err as Error).message);
     }
   }
   return filterRecentOffers(postFilter([...seen.values()], p, excludedHosts), maxAgeDays).filter(
@@ -397,13 +367,12 @@ export async function pollAll(
   lba: LbaClient | null,
   adzuna: AdzunaClient | null,
   careerjet: CareerjetClient | null,
-  dataforseo: DataforseoClient | null,
   db: Database.Database,
   cfg: Config,
   post: (p: ProfileRow, o: FtOffer, notify: boolean) => Promise<void>,
 ): Promise<void> {
   for (const p of listEnabledProfiles(db)) {
-    const fresh = await runProfile(ft, lba, adzuna, careerjet, dataforseo, db, p, cfg.excludedHosts, cfg.offerMaxAgeDays);
+    const fresh = await runProfile(ft, lba, adzuna, careerjet, db, p, cfg.excludedHosts, cfg.offerMaxAgeDays);
     await postFreshOffers(db, p, fresh, post);
     if (fresh.length) console.log(`[poll] profile ${p.id} (${p.label}): ${fresh.length} new offers`);
   }

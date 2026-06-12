@@ -5,9 +5,6 @@ export interface Config {
   adzunaAppId?: string;
   adzunaAppKey?: string;
   careerjetApiKey?: string;
-  dataforseoLogin?: string;
-  dataforseoPassword?: string;
-  trustedHosts: string[];
   careerjetUserIp: string;
   careerjetUserAgent: string;
   careerjetReferer?: string;
@@ -22,17 +19,6 @@ export interface Config {
   pollIntervalMs: number;
   apiPort: number;
 }
-
-// Allowlist par défaut pour les liens Google Jobs (ATS + jobboards officiels FR)
-const DEFAULT_TRUSTED_HOSTS = [
-  "greenhouse.io", "lever.co", "workable.com", "smartrecruiters.com",
-  "ashbyhq.com", "teamtailor.com", "welcomekit.co", "flatchr.io",
-  "talent-soft.com", "successfactors.eu", "myworkdayjobs.com", "icims.com",
-  "recruitee.com", "breezy.hr",
-  "francetravail.fr", "labonnealternance.apprentissage.beta.gouv.fr",
-  "1jeune1solution.gouv.fr", "choisirleservicepublic.gouv.fr",
-  "apec.fr", "hellowork.com", "meteojob.com", "regionsjob.com",
-].join(",");
 
 const DEFAULT_EXCLUDED_HOSTS = [
   "linkedin.com", "indeed", "glassdoor",
@@ -69,10 +55,6 @@ export function loadConfig(): Config {
     adzunaAppId: process.env.ADZUNA_APP_ID || undefined,
     adzunaAppKey: process.env.ADZUNA_APP_KEY || undefined,
     careerjetApiKey: process.env.CAREERJET_API_KEY || undefined,
-    dataforseoLogin: process.env.DATAFORSEO_LOGIN || undefined,
-    dataforseoPassword: process.env.DATAFORSEO_PASSWORD || undefined,
-    trustedHosts: (process.env.TRUSTED_HOSTS ?? DEFAULT_TRUSTED_HOSTS)
-      .split(",").map((s) => s.trim()).filter(Boolean),
     careerjetUserIp: process.env.CAREERJET_USER_IP || "127.0.0.1",
     careerjetUserAgent: process.env.CAREERJET_USER_AGENT || "JobSearcherBot/0.1",
     careerjetReferer: process.env.CAREERJET_REFERER || undefined,

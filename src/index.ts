@@ -4,7 +4,6 @@ import { loadConfig } from "./config.js";
 import { openDb, purgeSeen } from "./db.js";
 import { AdzunaClient } from "./adzunaClient.js";
 import { CareerjetClient } from "./careerjetClient.js";
-import { DataforseoClient } from "./dataforseoClient.js";
 import { FtClient } from "./ftClient.js";
 import { LbaClient } from "./lbaClient.js";
 import { pollAll } from "./poller.js";
@@ -47,12 +46,9 @@ async function main(): Promise<void> {
   const lba = cfg.lbaApiToken ? new LbaClient(cfg.lbaApiToken) : null;
   const adzuna = cfg.adzunaAppId && cfg.adzunaAppKey ? new AdzunaClient(cfg.adzunaAppId, cfg.adzunaAppKey) : null;
   const careerjet = cfg.careerjetApiKey ? new CareerjetClient(cfg) : null;
-  const dataforseo = cfg.dataforseoLogin && cfg.dataforseoPassword
-    ? new DataforseoClient(cfg.dataforseoLogin, cfg.dataforseoPassword, cfg)
-    : null;
 
   await registerCommands(cfg);
-  const client = createBot(cfg, db, ft, lba, adzuna, careerjet, dataforseo);
+  const client = createBot(cfg, db, ft, lba, adzuna, careerjet);
   await client.login(cfg.discordBotToken);
 
   const api = createApi(cfg, ft);
@@ -64,7 +60,7 @@ async function main(): Promise<void> {
     if (polling) return;
     polling = true;
     try {
-      await pollAll(ft, lba, adzuna, careerjet, dataforseo, db, cfg, (p, o, notify) => postOffer(client, p, o, notify));
+      await pollAll(ft, lba, adzuna, careerjet, db, cfg, (p, o, notify) => postOffer(client, p, o, notify));
     } catch (err) {
       console.error("[poll] run failed:", (err as Error).message);
     } finally {

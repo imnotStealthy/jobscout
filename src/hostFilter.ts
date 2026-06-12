@@ -14,17 +14,5 @@ export function isExcludedHost(host: string | null, excluded: string[]): boolean
   });
 }
 
-// Allowlist — même logique suffixe que isExcludedHost : "lever.co" couvre
-// "jobs.lever.co" mais pas "evil-lever.co".
-export function isTrustedHost(host: string | null, trusted: string[]): boolean {
-  if (!host) return false;
-  return trusted.some((raw) => {
-    const e = raw.trim().toLowerCase();
-    if (!e) return false;
-    if (e.includes(".")) return host === e || host.endsWith("." + e);
-    return host.split(".").includes(e);
-  });
-}
-
 export const normalize = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
