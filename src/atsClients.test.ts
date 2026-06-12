@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ProfileRow } from "./db.js";
 import { detectContractLabel } from "./atsContract.js";
+import { ghToFtOffer, isFranceLocation } from "./greenhouseClient.js";
 import { srToFtOffer } from "./smartrecruitersClient.js";
 import { leverToFtOffer } from "./leverClient.js";
 import { offerSeenKey, postFilter } from "./poller.js";
@@ -81,6 +82,36 @@ describe("leverToFtOffer", () => {
   });
 });
 
+describe("ghToFtOffer", () => {
+  const job = {
+    id: 6548126003,
+    title: "Stage - Account Executive (x/f/m)",
+    absolute_url: "https://job-boards.greenhouse.io/doctolib/jobs/6548126003",
+    updated_at: "2026-06-10T08:00:00-04:00",
+    location: { name: "Paris, France" },
+    content: "&lt;p&gt;Mission : pilotage de la qualité système.&lt;/p&gt;",
+  };
+  it("mappe vers FtOffer avec absolute_url et contrat détecté", () => {
+    const o = ghToFtOffer(job, "doctolib");
+    expect(o?.id).toBe("greenhouse:6548126003");
+    expect(o?.origineOffre?.urlOrigine).toBe("https://job-boards.greenhouse.io/doctolib/jobs/6548126003");
+    expect(o?.typeContratLibelle).toBe("Stage");
+    expect(o?.description).toBe("Mission : pilotage de la qualité système.");
+  });
+  it("drop une offre sans absolute_url (URL obligatoire)", () => {
+    expect(ghToFtOffer({ id: 1, title: "Offre" }, "doctolib")).toBeNull();
+  });
+  it("id stable -> dédup identique entre deux fetches", () => {
+    expect(offerSeenKey(ghToFtOffer(job, "doctolib")!))
+      .toBe(offerSeenKey(ghToFtOffer({ ...job }, "doctolib")!));
+  });
+  it("filtre France sur location.name", () => {
+    expect(isFranceLocation("Paris, France")).toBe(true);
+    expect(isFranceLocation("London, England, United Kingdom")).toBe(false);
+    expect(isFranceLocation(undefined)).toBe(false);
+  });
+});
+
 describe("postFilter sur offres ATS", () => {
   it("profil alternance garde l'offre Lever Apprenticeship, drop la CDI", () => {
     const p = profile({ keywords: JSON.stringify(["comptable", "alternance"]) });
@@ -101,5 +132,9 @@ describe("postFilter sur offres ATS", () => {
       id: "c", text: "Offre", hostedUrl: "https://fr.linkedin.com/jobs/1",
     }, "qonto")!;
     expect(postFilter([offer], p, EXCLUDED)).toHaveLength(0);
+    const gh = ghToFtOffer({
+      id: "d", title: "Offre", absolute_url: "https://fr.indeed.com/viewjob?jk=1",
+    }, "doctolib")!;
+    expect(postFilter([gh], p, EXCLUDED)).toHaveLength(0);
   });
 });

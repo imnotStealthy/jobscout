@@ -3,6 +3,7 @@ import type { Config } from "./config.js";
 import { AdzunaClient, AdzunaSearchParams } from "./adzunaClient.js";
 import { CareerjetClient, CareerjetSearchParams } from "./careerjetClient.js";
 import { FtClient, FtOffer, FtSearchParams, offerOriginUrl } from "./ftClient.js";
+import { GreenhouseClient } from "./greenhouseClient.js";
 import { LbaClient, LbaSearchParams } from "./lbaClient.js";
 import { LeverClient } from "./leverClient.js";
 import { SmartRecruitersClient } from "./smartrecruitersClient.js";
@@ -285,6 +286,7 @@ export async function runProfile(
   careerjet: CareerjetClient | null,
   smartrecruiters: SmartRecruitersClient | null,
   lever: LeverClient | null,
+  greenhouse: GreenhouseClient | null,
   db: Database.Database,
   p: ProfileRow,
   excludedHosts: string[],
@@ -338,6 +340,13 @@ export async function runProfile(
       console.error(`[poll] profile ${p.id} Lever query failed:`, (err as Error).message);
     }
   }
+  if (greenhouse) {
+    try {
+      for (const o of await greenhouse.search()) seen.set(offerSeenKey(o), o);
+    } catch (err) {
+      console.error(`[poll] profile ${p.id} Greenhouse query failed:`, (err as Error).message);
+    }
+  }
   return filterRecentOffers(postFilter([...seen.values()], p, excludedHosts), maxAgeDays).filter(
     (o) => !hasSeen(db, p.id, offerSeenKey(o)) && !hasSeen(db, p.id, o.id),
   );
@@ -389,12 +398,13 @@ export async function pollAll(
   careerjet: CareerjetClient | null,
   smartrecruiters: SmartRecruitersClient | null,
   lever: LeverClient | null,
+  greenhouse: GreenhouseClient | null,
   db: Database.Database,
   cfg: Config,
   post: (p: ProfileRow, o: FtOffer, notify: boolean) => Promise<void>,
 ): Promise<void> {
   for (const p of listEnabledProfiles(db)) {
-    const fresh = await runProfile(ft, lba, adzuna, careerjet, smartrecruiters, lever, db, p, cfg.excludedHosts, cfg.offerMaxAgeDays);
+    const fresh = await runProfile(ft, lba, adzuna, careerjet, smartrecruiters, lever, greenhouse, db, p, cfg.excludedHosts, cfg.offerMaxAgeDays);
     await postFreshOffers(db, p, fresh, post);
     if (fresh.length) console.log(`[poll] profile ${p.id} (${p.label}): ${fresh.length} new offers`);
   }
