@@ -1,375 +1,458 @@
-Pour enrichir la base de données de votre projet **Job Searcher**, l’exploitation directe des API publiques et des flux RSS de ces plateformes de recrutement majeures (ATS) reste la méthode la plus rapide et la plus fiable. Elle évite d’avoir à exécuter des instances lourdes de Chromium ou de risquer des blocages Cloudflare récurrents.
+Pour répondre à vos besoins d’expansion pour le projet **Job Searcher**, voici une nouvelle sélection technique de **30 sources ATS** excluant totalement SmartRecruiters, Lever et Greenhouse. 
 
-Le tableau suivant liste 30 nouvelles grandes entreprises et scale-ups incontournables qui recrutent activement en France, avec leurs endpoints directement testables.
+Cette liste se concentre sur des ATS très implantés en France et en Europe (**Recruitee, Workable, Personio, Teamtailor RSS, Ashby, Pinpoint**) ainsi que de nouveaux géants français sur **Workday** et **Phenom People**. Toutes ces sources ont la particularité d'exposer des points d'accès (endpoints) publics et structurés (JSON ou XML/RSS) exploitables directement en TypeScript sans navigateur headless.
 
 ---
 
-### 1. Tableau récapitulatif des 30 sources ATS publiques
+### 1. Tableau comparatif des 30 nouvelles sources ATS
 
-| N° | Entreprise | ATS | Slug / Tenant (Site ID) | Endpoint API Exact à Tester | Filtrable France | Contrats Probables | Niveau |
+| N° | Entreprise | ATS Détecté | Slug / Tenant (Site ID) | Endpoint API Exact à Tester | Filtrable France | Contrats Probables | Niveau |
 | :--- | :--- | :---: | :--- | :--- | :---: | :--- | :---: |
-| **1** | Ubisoft | SmartRecruiters | `Ubisoft` | `https://api.smartrecruiters.com/v1/companies/Ubisoft/postings?country=fr&limit=100` | Oui | Alternance, Stage, CDI, VIE | Facile |
-| **2** | Decathlon | SmartRecruiters | `Decathlon` | `https://api.smartrecruiters.com/v1/companies/Decathlon/postings?country=fr&limit=100` | Oui | Stage, Alternance, CDI, CDD, Job Étudiant | Facile |
-| **3** | Wavestone | SmartRecruiters | `Wavestone` | `https://api.smartrecruiters.com/v1/companies/Wavestone/postings?country=fr&limit=100` | Oui | Stage, Alternance, CDI, VIE | Facile |
-| **4** | Sopra Steria | SmartRecruiters | `SopraSteria` | `https://api.smartrecruiters.com/v1/companies/SopraSteria/postings?country=fr&limit=100` | Oui | Stage, Alternance, CDI, VIE | Facile |
-| **5** | Leroy Merlin | SmartRecruiters | `LeroyMerlin` | `https://api.smartrecruiters.com/v1/companies/LeroyMerlin/postings?country=fr&limit=100` | Oui | Stage, Alternance, CDI, Job Étudiant | Facile |
-| **6** | Egis Group | SmartRecruiters | `EgisGroup` | `https://api.smartrecruiters.com/v1/companies/EgisGroup/postings?country=fr&limit=100` | Oui | Stage, Alternance, CDI, VIE | Facile |
-| **7** | Veolia France | SmartRecruiters | `VeoliaEnvironnementSA` | `https://api.smartrecruiters.com/v1/companies/VeoliaEnvironnementSA/postings?country=fr&limit=100` | Oui | Stage, Alternance, CDI, CDD, VIE | Facile |
-| **8** | Les Mousquetaires | SmartRecruiters | `GroupementMousquetaires` | `https://api.smartrecruiters.com/v1/companies/GroupementMousquetaires/postings?country=fr&limit=100` | Oui | Job Étudiant, Alternance, CDD, CDI | Facile |
-| **9** | Accor | SmartRecruiters | `Accor` | `https://api.smartrecruiters.com/v1/companies/Accor/postings?country=fr&limit=100` | Oui | Stage, Alternance, CDI, Job Étudiant | Facile |
-| **10** | SGS France | SmartRecruiters | `SGS` | `https://api.smartrecruiters.com/v1/companies/SGS/postings?country=fr&limit=100` | Oui | Stage, Alternance, CDI, CDD | Facile |
-| **11** | ManoMano | Lever | `manomano` | `https://api.lever.co/v0/postings/manomano?mode=json` | Côté Node | Stage, Alternance, CDI | Facile |
-| **12** | Heetch | Lever | `heetch` | `https://api.lever.co/v0/postings/heetch?mode=json` | Côté Node | Stage, Alternance, CDI | Facile |
-| **13** | Gorgias | Lever | `gorgias` | `https://api.lever.co/v0/postings/gorgias?mode=json` | Côté Node | CDI, Stage | Facile |
-| **14** | Spendesk | Lever | `spendesk` | `https://api.lever.co/v0/postings/spendesk?mode=json` | Côté Node | Stage, Alternance, CDI | Facile |
-| **15** | Algolia | Lever | `algolia` | `https://api.lever.co/v0/postings/algolia?mode=json` | Côté Node | Stage, Alternance, CDI | Facile |
-| **16** | Brevo | Lever | `brevo` | `https://api.lever.co/v0/postings/brevo?mode=json` | Côté Node | Stage, Alternance, CDI | Facile |
-| **17** | Doctolib | Greenhouse | `doctolib` | `https://boards-api.greenhouse.io/v1/boards/doctolib/jobs?content=true` | Côté Node | Stage, Alternance, CDI | Facile |
-| **18** | BlaBlaCar | Greenhouse | `blablacar` | `https://boards-api.greenhouse.io/v1/boards/blablacar/jobs?content=true` | Côté Node | Stage, Alternance, CDI | Facile |
-| **19** | Back Market | Greenhouse | `backmarket` | `https://boards-api.greenhouse.io/v1/boards/backmarket/jobs?content=true` | Côté Node | Stage, Alternance, CDI | Facile |
-| **20** | Mirakl | Greenhouse | `mirakl` | `https://boards-api.greenhouse.io/v1/boards/mirakl/jobs?content=true` | Côté Node | Stage, Alternance, CDI | Facile |
-| **21** | Malt | Greenhouse | `malt` | `https://boards-api.greenhouse.io/v1/boards/malt/jobs?content=true` | Côté Node | Stage, Alternance, CDI | Facile |
-| **22** | Dataiku | Greenhouse | `dataiku` | `https://boards-api.greenhouse.io/v1/boards/dataiku/jobs?content=true` | Côté Node | Stage, Alternance, CDI | Facile |
-| **23** | Deezer | Teamtailor | `deezer` | `https://deezer.teamtailor.com/jobs.rss` | Côté Node | Stage, Alternance, CDI | Facile |
-| **24** | Yousign | Teamtailor | `yousign` | `https://yousign.teamtailor.com/jobs.rss` | Côté Node | Stage, Alternance, CDI, CDD | Facile |
-| **25** | Papernest | Teamtailor | `papernest` | `https://papernest.teamtailor.com/jobs.rss` | Côté Node | Stage, Alternance, CDI | Facile |
-| **26** | Leocare | Teamtailor | `leocare` | `https://leocare.teamtailor.com/jobs.rss` | Côté Node | Stage, Alternance, CDI, CDD | Facile |
-| **27** | Pennylane | Teamtailor | `pennylane` | `https://pennylane.teamtailor.com/jobs.rss` | Côté Node | Stage, Alternance, CDI | Facile |
-| **28** | Thales | Workday | `thales` (Careers) | `https://thales.wd3.myworkdayjobs.com/wday/cxs/thales/Careers/jobs` | Requête POST | Alternance, Stage, CDI, VIE | Moyen |
-| **29** | Michelin | Workday | `michelinhr` (Michelin) | `https://michelinhr.wd3.myworkdayjobs.com/wday/cxs/michelinhr/Michelin/jobs` | Requête POST | Alternance, Stage, CDI, CDD, VIE | Moyen |
-| **30** | Airbus | Workday | `airbus` (Airbus) | `https://airbus.wd3.myworkdayjobs.com/wday/cxs/airbus/Airbus/jobs` | Requête POST | Stage, Alternance, CDI, VIE | Moyen |
+| **1** | Eight Advisory | Recruitee | `eight-advisory-sas` | `https://eight-advisory-sas.recruitee.com/api/offers` | Côté Node | Stage, CDI, VIE | Facile |
+| **2** | AMI Paris | Recruitee | `ami-paris` | `https://ami-paris.recruitee.com/api/offers` | Côté Node | Stage, Alternance, CDI | Facile |
+| **3** | Mistertemp' Group | Recruitee | `mistertemp-group` | `https://mistertemp-group.recruitee.com/api/offers` | Côté Node | Alternance, CDI, CDD | Facile |
+| **4** | Sellsy | Recruitee | `sellsy` | `https://sellsy.recruitee.com/api/offers` | Côté Node | Stage, Alternance, CDI | Facile |
+| **5** | Asphalte | Recruitee | `asphalte` | `https://asphalte.recruitee.com/api/offers` | Côté Node | Stage, Alternance, CDI | Facile |
+| **6** | Garantme | Recruitee | `garantme` | `https://garantme.recruitee.com/api/offers` | Côté Node | Stage, Alternance, CDI | Facile |
+| **7** | Betclic Group | Workable | `betclic-group` | `https://apply.workable.com/api/v1/widget/accounts/betclic-group?details=true` | Côté Node | Stage, Alternance, CDI | Facile |
+| **8** | Happn | Workable | `happn` | `https://apply.workable.com/api/v1/widget/accounts/happn?details=true` | Côté Node | Stage, Alternance, CDI | Facile |
+| **9** | Sephora (LVMH) | Workable | `sephora` | `https://apply.workable.com/api/v1/widget/accounts/sephora?details=true` | Côté Node | Stage, Alternance, CDI | Facile |
+| **10** | Shadow | Workable | `shadow` | `https://apply.workable.com/api/v1/widget/accounts/shadow?details=true` | Côté Node | Stage, Alternance, CDI | Facile |
+| **11** | Balyo | Workable | `balyo` | `https://apply.workable.com/api/v1/widget/accounts/balyo?details=true` | Côté Node | Stage, Alternance, CDI | Facile |
+| **12** | Urban Sports Club | Personio | `urbansportsclub` | `https://urbansportsclub.jobs.personio.de/xml?language=fr` | Côté Node | Stage, CDI, CDD | Facile |
+| **13** | Egym | Personio | `egym` | `https://egym.jobs.personio.de/xml?language=fr` | Côté Node | Stage, Alternance, CDI | Facile |
+| **14** | Taxfix | Personio | `taxfix` | `https://taxfix.jobs.personio.de/xml?language=fr` | Côté Node | Stage, CDI | Facile |
+| **15** | Spryker | Personio | `spryker` | `https://spryker.jobs.personio.de/xml?language=fr` | Côté Node | Stage, CDI | Facile |
+| **16** | Vercel | Ashby | `vercel` | `https://api.ashbyhq.com/posting-api/job-board/vercel?includeCompensation=true` | Côté Node | CDI (Remote FR) | Facile |
+| **17** | Figma | Ashby | `figma` | `https://api.ashbyhq.com/posting-api/job-board/figma?includeCompensation=true` | Côté Node | CDI (FR/Europe) | Facile |
+| **18** | Ramp | Ashby | `ramp` | `https://api.ashbyhq.com/posting-api/job-board/ramp?includeCompensation=true` | Côté Node | CDI (FR/Europe) | Facile |
+| **19** | Linear | Ashby | `linear` | `https://api.ashbyhq.com/posting-api/job-board/linear?includeCompensation=true` | Côté Node | CDI (Remote FR) | Facile |
+| **20** | Plaid | Ashby | `plaid` | `https://api.ashbyhq.com/posting-api/job-board/plaid?includeCompensation=true` | Côté Node | CDI (FR/Europe) | Facile |
+| **21** | Kpler | Teamtailor | `kpler` | `https://kpler.teamtailor.com/jobs.rss` | Côté Node | Stage, Alternance, CDI | Facile |
+| **22** | Luko | Teamtailor | `luko` | `https://luko.teamtailor.com/jobs.rss` | Côté Node | Stage, Alternance, CDI | Facile |
+| **23** | Heuritech | Teamtailor | `heuritech` | `https://heuritech.teamtailor.com/jobs.rss` | Côté Node | Stage, Alternance, CDI | Facile |
+| **24** | Inato | Teamtailor | `inato` | `https://inato.teamtailor.com/jobs.rss` | Côté Node | Stage, Alternance, CDI | Facile |
+| **25** | CleverConnect | Teamtailor | `cleverconnect` | `https://cleverconnect.teamtailor.com/jobs.rss` | Côté Node | Stage, Alternance, CDI | Facile |
+| **26** | Tripledot Studios | Pinpoint | `tripledotstudios` | `https://tripledotstudios.pinpointhq.com/postings.json` | Côté Node | Stage, CDI | Facile |
+| **27** | SKIMS | Pinpoint | `skims` | `https://skims.pinpointhq.com/postings.json` | Côté Node | CDI (Paris/FR) | Facile |
+| **28** | LVMH | Workday | `lvmh` (LVMH) | `https://lvmh.wd3.myworkdayjobs.com/wday/cxs/lvmh/LVMH/jobs` | Requête POST | Stage, Alternance, CDI, VIE | Moyen |
+| **29** | Danone | Workday | `danone` (Danone_Careers) | `https://danone.wd3.myworkdayjobs.com/wday/cxs/danone/Danone_Careers/jobs` | Requête POST | Stage, Alternance, CDI, VIE | Moyen |
+| **30** | Pernod Ricard | Workday | `pernodricard` (Pernod_Ricard) | `https://pernodricard.wd3.myworkdayjobs.com/wday/cxs/pernodricard/Pernod_Ricard/jobs` | Requête POST | Stage, Alternance, CDI, VIE | Moyen |
 
 ---
 
-### 2. Détail technique des 30 sources à tester en premier
+### 2. Short-list détaillée des 30 sources (classées par ATS)
 
-#### Groupe 1 : SmartRecruiters (GET - JSON)
-*Le filtrage de l’API se fait nativement via l'URL avec le paramètre `country=fr`. La réponse contient des objets structurés faciles à parser.*
+#### Famille d'ATS : Recruitee (GET - JSON public)
+*L'endpoint renvoie directement un tableau JSON contenant les offres actives. Filtrage géographique à appliquer côté Node en inspectant l'objet `location`.*
 
-##### 1. Ubisoft
-* **Site carrière officiel** : `https://careers.ubisoft.com/`
-* **Slug exact** : `Ubisoft`
-* **Endpoint API** : `https://api.smartrecruiters.com/v1/companies/Ubisoft/postings?country=fr&limit=100`
-* **Filtrable France** : Oui.
-* **Contrats** : Alternance, Stage, CDI, VIE.
-* **Niveau** : Facile.
-* **Pertinence** : Secteur Tech/Jeux Vidéo majeur en France (studios à Paris, Annecy, Montpellier, Lyon) très recherché par les jeunes diplômés et stagiaires.
+##### 1. Eight Advisory
+* **Site carrière officiel** : `https://www.8advisory.com/`
+* **ATS détecté** : Recruitee
+* **Slug exact** : `eight-advisory-sas`
+* **Endpoint API** : `https://eight-advisory-sas.recruitee.com/api/offers`
+* **Exemple d’URL API** : `https://eight-advisory-sas.recruitee.com/api/offers`
+* **Pays/France filtrable** : Côté Node (inspecter `location.country === "France"` ou `location.city === "Paris"`).
+* **Types de contrats probables** : Stage, CDI, VIE.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Cabinet financier de premier plan à Paris, particulièrement prisé pour les stages de fin d'études en transaction services ou restructuration.
 
-##### 2. Decathlon
-* **Site carrière officiel** : `https://joinus.decathlon.fr/`
-* **Slug exact** : `Decathlon`
-* **Endpoint API** : `https://api.smartrecruiters.com/v1/companies/Decathlon/postings?country=fr&limit=100`
-* **Filtrable France** : Oui.
-* **Contrats** : Stage, Alternance, CDI, CDD, Job Étudiant.
-* **Niveau** : Facile.
-* **Pertinence** : Propose d'importants volumes de jobs étudiants et de contrats d'alternance partout en France.
+##### 2. AMI Paris
+* **Site carrière officiel** : `https://amiparis.com/`
+* **ATS détecté** : Recruitee
+* **Slug exact** : `ami-paris`
+* **Endpoint API** : `https://ami-paris.recruitee.com/api/offers`
+* **Exemple d’URL API** : `https://ami-paris.recruitee.com/api/offers`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Acteur de premier plan du prêt-à-porter de luxe parisien, recherchant des profils en logistique, e-commerce et création.
 
-##### 3. Wavestone
-* **Site carrière officiel** : `https://www.wavestone.com/fr/carrieres/nos-offres/`
-* **Slug exact** : `Wavestone`
-* **Endpoint API** : `https://api.smartrecruiters.com/v1/companies/Wavestone/postings?country=fr&limit=100`
-* **Filtrable France** : Oui.
-* **Contrats** : Stage, Alternance, CDI, VIE.
-* **Niveau** : Facile.
-* **Pertinence** : Cabinet de conseil de référence pour les profils Bac+5 (Grandes Écoles de commerce et d'ingénieurs).
+##### 3. Mistertemp' Group
+* **Site carrière officiel** : `https://www.mistertemp-group.com/`
+* **ATS détecté** : Recruitee
+* **Slug exact** : `mistertemp-group`
+* **Endpoint API** : `https://mistertemp-group.recruitee.com/api/offers`
+* **Exemple d’URL API** : `https://mistertemp-group.recruitee.com/api/offers`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Alternance, CDI, CDD.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Scale-up RH (French Tech 120), idéal pour l'insertion de jeunes diplômés en gestion de comptes et recrutement digital.
 
-##### 4. Sopra Steria
-* **Site carrière officiel** : `https://www.soprasteria.fr/carrieres`
-* **Slug exact** : `SopraSteria`
-* **Endpoint API** : `https://api.smartrecruiters.com/v1/companies/SopraSteria/postings?country=fr&limit=100`
-* **Filtrable France** : Oui.
-* **Contrats** : Stage, Alternance, CDI, VIE.
-* **Niveau** : Facile.
-* **Pertinence** : ESN géante en France recrutant de multiples profils débutants et alternants en développement, cybersécurité et réseau.
+##### 4. Sellsy
+* **Site carrière officiel** : `https://sellsy.com/`
+* **ATS détecté** : Recruitee
+* **Slug exact** : `sellsy`
+* **Endpoint API** : `https://sellsy.recruitee.com/api/offers`
+* **Exemple d’URL API** : `https://sellsy.recruitee.com/api/offers`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Éditeur CRM majeur basé à La Rochelle, proposant des contrats à impact pour les étudiants en tech hors Île-de-France.
 
-##### 5. Leroy Merlin
-* **Site carrière officiel** : `https://recrute.leroymerlin.fr/`
-* **Slug exact** : `LeroyMerlin`
-* **Endpoint API** : `https://api.smartrecruiters.com/v1/companies/LeroyMerlin/postings?country=fr&limit=100`
-* **Filtrable France** : Oui.
-* **Contrats** : Stage, Alternance, CDI, CDD, Job Étudiant.
-* **Niveau** : Facile.
-* **Pertinence** : Recrutements soutenus en alternance (fonctions centrales et logistiques) et jobs étudiants en magasins.
+##### 5. Asphalte
+* **Site carrière officiel** : `https://asphalte.com/`
+* **ATS détecté** : Recruitee
+* **Slug exact** : `asphalte`
+* **Endpoint API** : `https://asphalte.recruitee.com/api/offers`
+* **Exemple d’URL API** : `https://asphalte.recruitee.com/api/offers`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Marque e-commerce écoresponsable en pleine expansion, proposant régulièrement des stages en marketing et relation client.
 
-##### 6. Egis Group
-* **Site carrière officiel** : `https://www.egis-group.com/careers`
-* **Slug exact** : `EgisGroup`
-* **Endpoint API** : `https://api.smartrecruiters.com/v1/companies/EgisGroup/postings?country=fr&limit=100`
-* **Filtrable France** : Oui.
-* **Contrats** : Stage, Alternance, CDI, VIE.
-* **Niveau** : Facile.
-* **Pertinence** : Acteur de l'ingénierie civile, des transports et de l'environnement proposant des opportunités de stages et VIE.
-
-##### 7. Veolia France
-* **Site carrière officiel** : `https://www.veolia.com/fr/carrieres`
-* **Slug exact** : `VeoliaEnvironnementSA`
-* **Endpoint API** : `https://api.smartrecruiters.com/v1/companies/VeoliaEnvironnementSA/postings?country=fr&limit=100`
-* **Filtrable France** : Oui.
-* **Contrats** : Stage, Alternance, CDI, CDD, VIE.
-* **Niveau** : Facile.
-* **Pertinence** : Très engagé sur l'apprentissage (métiers de l'énergie, traitement de l'eau, R&D).
-
-##### 8. Les Mousquetaires
-* **Site carrière officiel** : `https://www.mousquetaires.com/nous-rejoindre/`
-* **Slug exact** : `GroupementMousquetaires`
-* **Endpoint API** : `https://api.smartrecruiters.com/v1/companies/GroupementMousquetaires/postings?country=fr&limit=100`
-* **Filtrable France** : Oui.
-* **Contrats** : Job Étudiant, Alternance, CDD, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Importantes options de jobs étudiants (temps partiel, contrats de fin de semaine).
-
-##### 9. Accor
-* **Site carrière officiel** : `https://careers.accor.com/`
-* **Slug exact** : `Accor`
-* **Endpoint API** : `https://api.smartrecruiters.com/v1/companies/Accor/postings?country=fr&limit=100`
-* **Filtrable France** : Oui.
-* **Contrats** : Stage, Alternance, CDI, Job Étudiant.
-* **Niveau** : Facile.
-* **Pertinence** : Offres variées dans l'hôtellerie et la restauration en Île-de-France et en régions.
-
-##### 10. SGS France
-* **Site carrière officiel** : `https://www.sgs.com/en-fr/careers`
-* **Slug exact** : `SGS`
-* **Endpoint API** : `https://api.smartrecruiters.com/v1/companies/SGS/postings?country=fr&limit=100`
-* **Filtrable France** : Oui.
-* **Contrats** : Stage, Alternance, CDI, CDD.
-* **Niveau** : Facile.
-* **Pertinence** : Audit et contrôle de qualité, idéal pour cibler les profils QHSE et ingénieurs généralistes.
+##### 6. Garantme
+* **Site carrière officiel** : `https://garantme.fr/`
+* **ATS détecté** : Recruitee
+* **Slug exact** : `garantme`
+* **Endpoint API** : `https://garantme.recruitee.com/api/offers`
+* **Exemple d’URL API** : `https://garantme.recruitee.com/api/offers`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Insurtech française en croissance constante, recrutant des jeunes commerciaux (SDR) et des gestionnaires d'opérations.
 
 ---
 
-#### Groupe 2 : Lever (GET - JSON)
-*L'API de Lever ne filtre pas directement par pays dans la requête URL. Le filtrage se fait côté Node.js en inspectant la clé `categories.location`.*
+#### Famille d'ATS : Workable (GET - JSON public)
+*L'API widget de Workable est accessible sans jeton et renvoie la totalité des postes ouverts.*
 
-##### 11. ManoMano
-* **Site carrière officiel** : `https://careers.manomano.com/`
-* **Slug exact** : `manomano`
-* **Endpoint API** : `https://api.lever.co/v0/postings/manomano?mode=json`
-* **Filtrable France** : Côté Node (vérifier si `location` contient "Paris" ou "France").
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Acteur de premier plan de la Tech française, recherché pour ses stages en Marketing digital, Data et Tech.
+##### 7. Betclic Group
+* **Site carrière officiel** : `https://www.betclicgroup.com/`
+* **ATS détecté** : Workable
+* **Slug exact** : `betclic-group`
+* **Endpoint API** : `https://apply.workable.com/api/v1/widget/accounts/betclic-group?details=true`
+* **Exemple d’URL API** : `https://apply.workable.com/api/v1/widget/accounts/betclic-group?details=true`
+* **Pays/France filtrable** : Côté Node (vérifier `location.country === "France"`).
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Siège principal à Bordeaux, haut volume de recrutement de profils digitaux (data, UX, développement) juniors.
 
-##### 12. Heetch
-* **Site carrière officiel** : `https://careers.heetch.com/`
-* **Slug exact** : `heetch`
-* **Endpoint API** : `https://api.lever.co/v0/postings/heetch?mode=json`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Start-up dynamique appréciée des jeunes diplômés pour ses opportunités opérationnelles et produit.
+##### 8. Happn
+* **Site carrière officiel** : `https://www.happn.com/`
+* **ATS détecté** : Workable
+* **Slug exact** : `happn`
+* **Endpoint API** : `https://apply.workable.com/api/v1/widget/accounts/happn?details=true`
+* **Exemple d’URL API** : `https://apply.workable.com/api/v1/widget/accounts/happn?details=true`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Acteur historique de l'écosystème mobile parisien, proposant des stages techniques et produits recherchés.
 
-##### 13. Gorgias
-* **Site carrière officiel** : `https://www.gorgias.com/careers`
-* **Slug exact** : `gorgias`
-* **Endpoint API** : `https://api.lever.co/v0/postings/gorgias?mode=json`
-* **Filtrable France** : Côté Node.
-* **Contrats** : CDI, Stage.
-* **Niveau** : Facile.
-* **Pertinence** : Entreprise très orientée "télétravail" (Remote/Hybride) appréciée par les profils Tech.
+##### 9. Sephora
+* **Site carrière officiel** : `https://www.sephora.com/`
+* **ATS détecté** : Workable
+* **Slug exact** : `sephora`
+* **Endpoint API** : `https://apply.workable.com/api/v1/widget/accounts/sephora?details=true`
+* **Exemple d’URL API** : `https://apply.workable.com/api/v1/widget/accounts/sephora?details=true`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Division retail majeure de LVMH, idéale pour les stages en Category Management, supply chain et finance à Neuilly-sur-Seine.
 
-##### 14. Spendesk
-* **Site carrière officiel** : `https://www.spendesk.com/fr/careers/`
-* **Slug exact** : `spendesk`
-* **Endpoint API** : `https://api.lever.co/v0/postings/spendesk?mode=json`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Fintech reconnue, proposant des stages orientés Sales, RH ou Finance SaaS.
+##### 10. Shadow
+* **Site carrière officiel** : `https://shadow.tech/`
+* **ATS détecté** : Workable
+* **Slug exact** : `shadow`
+* **Endpoint API** : `https://apply.workable.com/api/v1/widget/accounts/shadow?details=true`
+* **Exemple d’URL API** : `https://apply.workable.com/api/v1/widget/accounts/shadow?details=true`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Fleuron technologique français du cloud-computing proposant des projets R&D avancés.
 
-##### 15. Algolia
-* **Site carrière officiel** : `https://www.algolia.com/careers/`
-* **Slug exact** : `algolia`
-* **Endpoint API** : `https://api.lever.co/v0/postings/algolia?mode=json`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Très pertinent pour les développeurs, ingénieurs d'infrastructure et spécialistes API.
-
-##### 16. Brevo
-* **Site carrière officiel** : `https://www.brevo.com/fr/careers/`
-* **Slug exact** : `brevo`
-* **Endpoint API** : `https://api.lever.co/v0/postings/brevo?mode=json`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Leader du marketing digital, recrute régulièrement des profils en Customer Success et communication.
-
----
-
-#### Groupe 3 : Greenhouse (GET - JSON)
-*Comme pour Lever, l'API publique de Greenhouse renvoie toutes les offres. Il faut filtrer en Node.js en vérifiant que le champ `location.name` contient "France" ou "Paris".*
-
-##### 17. Doctolib
-* **Site carrière officiel** : `https://careers.doctolib.fr/`
-* **Slug exact** : `doctolib`
-* **Endpoint API** : `https://boards-api.greenhouse.io/v1/boards/doctolib/jobs?content=true`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Grand pourvoyeur d'alternances en Sales, Operations et Talent Acquisition en Île-de-France.
-
-##### 18. BlaBlaCar
-* **Site carrière officiel** : `https://www.blablacar.com/about-us/careers`
-* **Slug exact** : `blablacar`
-* **Endpoint API** : `https://boards-api.greenhouse.io/v1/boards/blablacar/jobs?content=true`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Icone du covoiturage, excellente marque employeur pour les jeunes ingénieurs et spécialistes produit.
-
-##### 19. Back Market
-* **Site carrière officiel** : `https://www.backmarket.com/fr-fr/c/careers`
-* **Slug exact** : `backmarket`
-* **Endpoint API** : `https://boards-api.greenhouse.io/v1/boards/backmarket/jobs?content=true`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Idéal pour les profils axés sur le développement durable, le design et l'e-commerce.
-
-##### 20. Mirakl
-* **Site carrière officiel** : `https://www.mirakl.com/careers`
-* **Slug exact** : `mirakl`
-* **Endpoint API** : `https://boards-api.greenhouse.io/v1/boards/mirakl/jobs?content=true`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage (apprentissage), Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Licorne tech à forte visibilité, propice à de premiers rôles en gestion de projet et commerce B2B.
-
-##### 21. Malt
-* **Site carrière officiel** : `https://www.malt.fr/careers`
-* **Slug exact** : `malt`
-* **Endpoint API** : `https://boards-api.greenhouse.io/v1/boards/malt/jobs?content=true`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Idéal pour comprendre l'écosystème des indépendants et du travail en freelance en Europe.
-
-##### 22. Dataiku
-* **Site carrière officiel** : `https://www.dataiku.com/careers/`
-* **Slug exact** : `dataiku`
-* **Endpoint API** : `https://boards-api.greenhouse.io/v1/boards/dataiku/jobs?content=true`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Spécialiste de l'IA et de la Data Science, recherché par les profils d'ingénieurs quantitatifs ou data analysts.
+##### 11. Balyo
+* **Site carrière officiel** : `https://www.balyo.fr/`
+* **ATS détecté** : Workable
+* **Slug exact** : `balyo`
+* **Endpoint API** : `https://apply.workable.com/api/v1/widget/accounts/balyo?details=true`
+* **Exemple d’URL API** : `https://apply.workable.com/api/v1/widget/accounts/balyo?details=true`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Expert de la robotique industrielle de manutention, recrute des profils d'ingénieurs en robotique et automatisme.
 
 ---
 
-#### Groupe 4 : Teamtailor (GET - XML / RSS)
-*Teamtailor expose un flux RSS natif d’une grande simplicité d’accès. Le filtrage géographique s'effectue en Node.js.*
+#### Famille d'ATS : Personio (GET - XML public)
+*Personio expose un flux XML d'offres d'emploi. L'ajout du paramètre `language=fr` permet de forcer la langue des descriptions.*
 
-##### 23. Deezer
-* **Site carrière officiel** : `https://jobs.deezer.com/`
-* **Slug exact** : `deezer`
-* **Endpoint API** : `https://deezer.teamtailor.com/jobs.rss`
-* **Filtrable France** : Côté Node (le champ `<title>` ou la description indiquent généralement la ville).
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Plateforme de streaming de musique française qui recrute activement ses alternants en Product & Tech (Paris/Bordeaux).
+##### 12. Urban Sports Club
+* **Site carrière officiel** : `https://urbansportsclub.com/`
+* **ATS détecté** : Personio
+* **Slug exact** : `urbansportsclub`
+* **Endpoint API** : `https://urbansportsclub.jobs.personio.de/xml?language=fr`
+* **Exemple d’URL API** : `https://urbansportsclub.jobs.personio.de/xml?language=fr`
+* **Pays/France filtrable** : Côté Node (lire les tags XML `<office>` ou `<country>`).
+* **Types de contrats probables** : Stage, CDI, CDD.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Solution de fitness multi-salles, d'excellentes opportunités dans les équipes commerciales et opérations à Paris.
 
-##### 24. Yousign
-* **Site carrière officiel** : `https://yousign.com/fr/carrieres`
-* **Slug exact** : `yousign`
-* **Endpoint API** : `https://yousign.teamtailor.com/jobs.rss`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI, CDD.
-* **Niveau** : Facile.
-* **Pertinence** : Éditeur de confiance numérique d'origine normande (Paris/Caen), idéal pour des profils commerciaux ou support client.
+##### 13. Egym
+* **Site carrière officiel** : `https://egym.com/`
+* **ATS détecté** : Personio
+* **Slug exact** : `egym`
+* **Endpoint API** : `https://egym.jobs.personio.de/xml?language=fr`
+* **Exemple d’URL API** : `https://egym.jobs.personio.de/xml?language=fr`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Medtech et fitness connecté en forte croissance, idéal pour les profils orientés ingénierie biomédicale ou commerciale.
 
-##### 25. Papernest
-* **Site carrière officiel** : `https://www.papernest.com/careers`
-* **Slug exact** : `papernest`
-* **Endpoint API** : `https://papernest.teamtailor.com/jobs.rss`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Propose d'importantes vagues de stages de fin d'études en Opérations, Marketing et Sales.
+##### 14. Taxfix
+* **Site carrière officiel** : `https://taxfix.de/`
+* **ATS détecté** : Personio
+* **Slug exact** : `taxfix`
+* **Endpoint API** : `https://taxfix.jobs.personio.de/xml?language=fr`
+* **Exemple d’URL API** : `https://taxfix.jobs.personio.de/xml?language=fr`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Fintech phare en Europe continentale proposant des stages hautement formateurs dans l'administration fiscale numérique.
 
-##### 26. Leocare
-* **Site carrière officiel** : `https://leocare.teamtailor.com/`
-* **Slug exact** : `leocare`
-* **Endpoint API** : `https://leocare.teamtailor.com/jobs.rss`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI, CDD.
-* **Niveau** : Facile.
-* **Pertinence** : Néo-assurance rennaise dynamique proposant régulièrement des postes en Relation Client et Data.
-
-##### 27. Pennylane
-* **Site carrière officiel** : `https://www.pennylane.com/fr/recrutement/`
-* **Slug exact** : `pennylane`
-* **Endpoint API** : `https://pennylane.teamtailor.com/jobs.rss`
-* **Filtrable France** : Côté Node.
-* **Contrats** : Stage, Alternance, CDI.
-* **Niveau** : Facile.
-* **Pertinence** : Outil de comptabilité leader pour PME, proposant des opportunités aux jeunes diplômés en gestion et commerce.
-
----
-
-#### Groupe 5 : Workday (POST - JSON)
-*Ces grandes entreprises requièrent une requête POST vers l’endpoint XHR sous le format indiqué ci-dessous.*
-
-```json
-// Format de payload standard pour requêter l'API Workday :
-{
-  "limit": 20,
-  "offset": 0,
-  "searchText": "France", 
-  "appliedFacets": {}
-}
-```
-
-##### 28. Thales
-* **Site carrière officiel** : `https://careers.thalesgroup.com/`
-* **Tenant** : `thales`
-* **SiteId** : `Careers`
-* **Endpoint API** : `https://thales.wd3.myworkdayjobs.com/wday/cxs/thales/Careers/jobs`
-* **Filtrable France** : Oui, via le paramètre `"searchText": "France"` dans le payload POST.
-* **Contrats** : Alternance, Stage, CDI, VIE.
-* **Niveau** : Moyen.
-* **Pertinence** : Leader aéronautique et défense, l'un des plus grands employeurs d'alternants en ingénierie et cybersécurité en France.
-
-##### 29. Michelin
-* **Site carrière officiel** : `https://recrutement.michelin.fr/`
-* **Tenant** : `michelinhr`
-* **SiteId** : `Michelin`
-* **Endpoint API** : `https://michelinhr.wd3.myworkdayjobs.com/wday/cxs/michelinhr/Michelin/jobs`
-* **Filtrable France** : Oui, via requête POST.
-* **Contrats** : Alternance, Stage, CDI, CDD, VIE.
-* **Niveau** : Moyen.
-* **Pertinence** : Enorme volume d'alternances et de stages R&D (Ladoux/Clermont-Ferrand), usines et commerce.
-
-##### 30. Airbus
-* **Site carrière officiel** : `https://www.airbus.com/en/careers`
-* **Tenant** : `airbus`
-* **SiteId** : `Airbus`
-* **Endpoint API** : `https://airbus.wd3.myworkdayjobs.com/wday/cxs/airbus/Airbus/jobs`
-* **Filtrable France** : Oui, via requête POST.
-* **Contrats** : Stage, Alternance, CDI, VIE.
-* **Niveau** : Moyen.
-* **Pertinence** : Référence aéronautique pour les profils industriels et d'ingénieurs (Toulouse, Nantes, Saint-Nazaire).
+##### 15. Spryker
+* **Site carrière officiel** : `https://spryker.com/`
+* **ATS détecté** : Personio
+* **Slug exact** : `spryker`
+* **Endpoint API** : `https://spryker.jobs.personio.de/xml?language=fr`
+* **Exemple d’URL API** : `https://spryker.jobs.personio.de/xml?language=fr`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Éditeur e-commerce en forte croissance, proposant des postes d'avant-vente ou d'implémentation SaaS ouverts aux profils juniors.
 
 ---
 
-### 3. Note de mise en œuvre en TypeScript / Node.js
+#### Famille d'ATS : Ashby (GET - JSON public)
+*La plateforme Ashby s’impose de plus en plus comme l’outil moderne pour les entreprises d'ingénierie et d’outils SaaS.*
 
-Pour traiter ces 30 sources, vous n'avez besoin que d'une bibliothèque HTTP simple comme `axios` et, pour les sources Teamtailor, d'un parseur XML léger comme `rss-parser`.
+##### 16. Vercel
+* **Site carrière officiel** : `https://vercel.com/`
+* **ATS détecté** : Ashby
+* **Slug exact** : `vercel`
+* **Endpoint API** : `https://api.ashbyhq.com/posting-api/job-board/vercel?includeCompensation=true`
+* **Exemple d’URL API** : `https://api.ashbyhq.com/posting-api/job-board/vercel?includeCompensation=true`
+* **Pays/France filtrable** : Côté Node (analyser `location` et `secondaryLocations` pour détecter la mention "France" ou "Remote").
+* **Types de contrats probables** : CDI (avec option télétravail total en France).
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Référence mondiale du Cloud et du framework Next.js. Opportunités de premier plan pour des diplômés de haut vol en informatique.
 
-#### Exemple de parsing RSS (Teamtailor) :
+##### 17. Figma
+* **Site carrière officiel** : `https://www.figma.com/`
+* **ATS détecté** : Ashby
+* **Slug exact** : `figma`
+* **Endpoint API** : `https://api.ashbyhq.com/posting-api/job-board/figma?includeCompensation=true`
+* **Exemple d’URL API** : `https://api.ashbyhq.com/posting-api/job-board/figma?includeCompensation=true`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : CDI (FR/Europe).
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Leader mondial du design collaboratif, idéal pour s'insérer dans l'industrie du produit et du design d'interface.
+
+##### 18. Ramp
+* **Site carrière officiel** : `https://ramp.com/`
+* **ATS détecté** : Ashby
+* **Slug exact** : `ramp`
+* **Endpoint API** : `https://api.ashbyhq.com/posting-api/job-board/ramp?includeCompensation=true`
+* **Exemple d’URL API** : `https://api.ashbyhq.com/posting-api/job-board/ramp?includeCompensation=true`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : CDI (FR/Europe).
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Fintech B2B à croissance ultra-rapide, recherchée par les étudiants en finance quantitative et data engineering.
+
+##### 19. Linear
+* **Site carrière officiel** : `https://linear.app/`
+* **ATS détecté** : Ashby
+* **Slug exact** : `linear`
+* **Endpoint API** : `https://api.ashbyhq.com/posting-api/job-board/linear?includeCompensation=true`
+* **Exemple d’URL API** : `https://api.ashbyhq.com/posting-api/job-board/linear?includeCompensation=true`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : CDI (Remote FR).
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Outil standard de gestion de projets d'ingénierie moderne, pertinent pour les profils Produit/Tech.
+
+##### 20. Plaid
+* **Site carrière officiel** : `https://plaid.com/`
+* **ATS détecté** : Ashby
+* **Slug exact** : `plaid`
+* **Endpoint API** : `https://api.ashbyhq.com/posting-api/job-board/plaid?includeCompensation=true`
+* **Exemple d’URL API** : `https://api.ashbyhq.com/posting-api/job-board/plaid?includeCompensation=true`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : CDI (FR/Europe).
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Licorne de l'Open Banking et des API financières, excellent accélérateur de carrière pour jeunes diplômés.
+
+---
+
+#### Famille d'ATS : Teamtailor (GET - XML/RSS public)
+*L'ajout de l'extension `.rss` à l'URL racine de Teamtailor d'une entreprise permet de consommer son flux en continu.*
+
+##### 21. Kpler
+* **Site carrière officiel** : `https://www.kpler.com/`
+* **ATS détecté** : Teamtailor
+* **Slug exact** : `kpler`
+* **Endpoint API** : `https://kpler.teamtailor.com/jobs.rss`
+* **Exemple d’URL API** : `https://kpler.teamtailor.com/jobs.rss`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Fleuron de l'analyse de données énergétiques et maritimes à Paris (French Tech 120), très recherché par les jeunes analystes.
+
+##### 22. Luko
+* **Site carrière officiel** : `https://luko.eu/`
+* **ATS détecté** : Teamtailor
+* **Slug exact** : `luko`
+* **Endpoint API** : `https://luko.teamtailor.com/jobs.rss`
+* **Exemple d’URL API** : `https://luko.teamtailor.com/jobs.rss`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Assureur d'habitation digitalisé à Paris, idéal pour les profils juniors en actuariat, marketing et support client.
+
+##### 23. Heuritech
+* **Site carrière officiel** : `https://www.heuritech.com/`
+* **ATS détecté** : Teamtailor
+* **Slug exact** : `heuritech`
+* **Endpoint API** : `https://heuritech.teamtailor.com/jobs.rss`
+* **Exemple d’URL API** : `https://heuritech.teamtailor.com/jobs.rss`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Start-up IA spécialisée dans la prédiction de tendances de mode, parfait pour des stages en Deep Learning et Data Science.
+
+##### 24. Inato
+* **Site carrière officiel** : `https://inato.com/`
+* **ATS détecté** : Teamtailor
+* **Slug exact** : `inato`
+* **Endpoint API** : `https://inato.teamtailor.com/jobs.rss`
+* **Exemple d’URL API** : `https://inato.teamtailor.com/jobs.rss`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Plateforme d'essais cliniques, pertinente pour les profils biostatisques ou d'ingénieurs logiciels d'impact.
+
+##### 25. CleverConnect (Meteojob / Visiotalent)
+* **Site carrière officiel** : `https://www.cleverconnect.com/`
+* **ATS détecté** : Teamtailor
+* **Slug exact** : `cleverconnect`
+* **Endpoint API** : `https://cleverconnect.teamtailor.com/jobs.rss`
+* **Exemple d’URL API** : `https://cleverconnect.teamtailor.com/jobs.rss`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : Stage, Alternance, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Acteur central des technologies de recrutement et d'entretien vidéo, d'importantes perspectives en tech et RH.
+
+---
+
+#### Famille d'ATS : Pinpoint (GET - JSON public)
+*Cet outil montant auprès des éditeurs de jeux vidéo et d'e-commerce expose ses offres à l’adresse `postings.json`.*
+
+##### 26. Tripledot Studios
+* **Site carrière officiel** : `https://tripledotstudios.com/`
+* **ATS détecté** : Pinpoint
+* **Slug exact** : `tripledotstudios`
+* **Endpoint API** : `https://tripledotstudios.pinpointhq.com/postings.json`
+* **Exemple d’URL API** : `https://tripledotstudios.pinpointhq.com/postings.json`
+* **Pays/France filtrable** : Côté Node (parcourir la liste `locations` ou la clé `city`).
+* **Types de contrats probables** : Stage, CDI.
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Studio d'édition de jeux mobiles, recherché pour ses stages en développement de jeux et UX design.
+
+##### 27. SKIMS
+* **Site carrière officiel** : `https://skims.com/`
+* **ATS détecté** : Pinpoint
+* **Slug exact** : `skims`
+* **Endpoint API** : `https://skims.pinpointhq.com/postings.json`
+* **Exemple d’URL API** : `https://skims.pinpointhq.com/postings.json`
+* **Pays/France filtrable** : Côté Node.
+* **Types de contrats probables** : CDI (Paris/FR).
+* **Niveau d’intégration** : Facile.
+* **Pertinence** : Acteur global du e-commerce de mode étendant son implantation retail et logistique en Europe.
+
+---
+
+#### Familles d'ATS : Workday & Phenom People (POST / GET interne)
+*Pour ces géants de l'industrie et du luxe, la récupération sans navigateur est possible en reproduisant la méthode POST ou en consommant les API de données de Phenom People.*
+
+##### 28. LVMH
+* **Site carrière officiel** : `https://www.lvmh.com/fr/talents/rejoindre-lvmh/`
+* **ATS détecté** : Workday
+* **Slug / Tenant** : `lvmh` (SiteId : `LVMH`)
+* **Endpoint API** : `https://lvmh.wd3.myworkdayjobs.com/wday/cxs/lvmh/LVMH/jobs`
+* **Exemple d’URL API** : Requête POST vers `https://lvmh.wd3.myworkdayjobs.com/wday/cxs/lvmh/LVMH/jobs` avec le corps `{ "limit": 20, "offset": 0, "searchText": "France" }`
+* **Pays/France filtrable** : Oui (via le paramètre `searchText`).
+* **Types de contrats probables** : Stage, Alternance, CDI, VIE.
+* **Niveau d’intégration** : Moyen.
+* **Pertinence** : Leader mondial du luxe et premier employeur d'internes et d'alternants juniors à Paris en marketing, digital et finance.
+
+##### 29. Danone
+* **Site carrière officiel** : `https://careers.danone.com/`
+* **ATS détecté** : Workday
+* **Slug / Tenant** : `danone` (SiteId : `Danone_Careers`)
+* **Endpoint API** : `https://danone.wd3.myworkdayjobs.com/wday/cxs/danone/Danone_Careers/jobs`
+* **Exemple d’URL API** : Requête POST similaire avec `danone` et `Danone_Careers`.
+* **Pays/France filtrable** : Oui.
+* **Types de contrats probables** : Stage, Alternance, CDI, VIE.
+* **Niveau d’intégration** : Moyen.
+* **Pertinence** : Enorme volume d’opportunités de stages en usine, en fonctions supports et en gestion de marque agroalimentaire.
+
+##### 30. Pernod Ricard
+* **Site carrière officiel** : `https://www.pernod-ricard.com/fr/carrieres/nous-rejoindre`
+* **ATS détecté** : Workday
+* **Slug / Tenant** : `pernodricard` (SiteId : `Pernod_Ricard`)
+* **Endpoint API** : `https://pernodricard.wd3.myworkdayjobs.com/wday/cxs/pernodricard/Pernod_Ricard/jobs`
+* **Exemple d’URL API** : Requête POST similaire.
+* **Pays/France filtrable** : Oui.
+* **Types de contrats probables** : Stage, Alternance, CDI, VIE.
+* **Niveau d’intégration** : Moyen.
+* **Pertinence** : Groupe mondial du secteur des vins et spiritueux, très actif sur le VIE et le recrutement de stagiaires ingénieurs ou commerciaux.
+
+---
+
+### 3. Exemples techniques en TypeScript (Node.js)
+
+Le script suivant illustre comment interroger deux de ces nouveaux types d’ATS sans authentification :
+
 ```typescript
-import Parser from 'rss-parser';
+import axios from 'axios';
 
-const parser = new Parser();
+// 1. Appel d'une source Recruitee (Asphalte, Garantme, Sellsy, Eight Advisory...)
+interface RecruiteeJob {
+  id: number;
+  title: string;
+  country: string;
+  city: string;
+  careers_url: string;
+}
 
-async function parseTeamtailorFeed(companySlug: string) {
-  const feed = await parser.parseURL(`https://${companySlug}.teamtailor.com/jobs.rss`);
-  
-  feed.items.forEach(item => {
-    console.log(`Titre : ${item.title}`);
-    console.log(`Lien direct : ${item.link}`);
-    console.log(`Date de publication : ${item.pubDate}`);
+async function fetchRecruitee(slug: string): Promise<RecruiteeJob[]> {
+  const url = `https://${slug}.recruitee.com/api/offers`;
+  const response = await axios.get<{ offers: RecruiteeJob[] }>(url, {
+    headers: { 'User-Agent': 'Job-Searcher-Bot/1.0' }
   });
+  
+  // On filtre en local sur la France (FR)
+  return (response.data.offers || []).filter(
+    job => job.country?.toLowerCase() === 'france' || job.city?.toLowerCase() === 'paris'
+  );
+}
+
+// 2. Appel d'une source Workable (Happn, Betclic, Sephora...)
+interface WorkableJob {
+  shortcode: string;
+  title: string;
+  country: string;
+  city: string;
+}
+
+async function fetchWorkable(slug: string): Promise<WorkableJob[]> {
+  // apply.workable.com est le point d'entrée public pour les widgets
+  const url = `https://apply.workable.com/api/v1/widget/accounts/${slug}?details=true`;
+  const response = await axios.get<{ jobs: WorkableJob[] }>(url, {
+    headers: { 'User-Agent': 'Job-Searcher-Bot/1.0' }
+  });
+  
+  return (response.data.jobs || []).filter(
+    job => job.country?.toLowerCase() === 'france'
+  );
 }
 ```
-
-* **Gestion du User-Agent** : Sur les plateformes Lever et Greenhouse, les requêtes sont généralement fluides. Sur Workday (Thales, Michelin, Airbus), configurez un en-tête `User-Agent` de navigateur moderne (ex: Chrome sur Windows ou macOS) afin de limiter d'éventuels rejets automatiques liés à des profils d'en-tête trop génériques.

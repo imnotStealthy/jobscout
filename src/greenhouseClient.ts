@@ -1,6 +1,8 @@
-import { AtsClient, fetchAtsJson } from "./atsClient.js";
+import { AtsClient, fetchAtsJson, isFranceLocation } from "./atsClient.js";
 import type { FtOffer } from "./ftClient.js";
 import { contractLibelle, detectContractLabel } from "./atsContract.js";
+
+export { isFranceLocation };
 
 // API publique Greenhouse Job Board (vérifiée 2026-06-12) :
 // GET https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true
@@ -16,12 +18,6 @@ export interface GreenhouseJob {
 }
 
 const BASE_URL = "https://boards-api.greenhouse.io/v1/boards";
-// Les boards Greenhouse sont mondiaux : on ne garde que la France.
-const FR_LOCATION = /france|paris|lyon|bordeaux|nantes|lille|toulouse|marseille|rennes|strasbourg|grenoble|montpellier|nice/i;
-
-export function isFranceLocation(name: string | undefined): boolean {
-  return FR_LOCATION.test(name ?? "");
-}
 
 // content est du HTML encodé en entités -> texte brut minimal pour le match titre.
 function plainText(html: string | undefined): string | undefined {

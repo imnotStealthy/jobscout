@@ -3,6 +3,12 @@ import type { FtOffer } from "./ftClient.js";
 export const ATS_USER_AGENT = "JobSearcherBot/0.1";
 const CACHE_TTL_MS = 10 * 60 * 1000; // un poll multi-profils ne refetch pas chaque société
 
+// Les ATS mondiaux exposent des libellés de lieu en clair : on ne garde que la France.
+const FR_LOCATION = /france|paris|lyon|bordeaux|nantes|lille|toulouse|marseille|rennes|strasbourg|grenoble|montpellier|nice/i;
+export function isFranceLocation(name: string | undefined): boolean {
+  return FR_LOCATION.test(name ?? "");
+}
+
 // GET JSON depuis une API ATS publique. Le label sert au message d'erreur
 // ("SmartRecruiters Wavestone1: HTTP 404").
 export async function fetchAtsJson(label: string, url: string): Promise<unknown> {

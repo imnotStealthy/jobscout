@@ -8,6 +8,7 @@ export interface Config {
   smartrecruitersCompanies: string[];
   leverCompanies: string[];
   greenhouseCompanies: string[];
+  ashbyCompanies: string[];
   careerjetUserIp: string;
   careerjetUserAgent: string;
   careerjetReferer?: string;
@@ -76,6 +77,9 @@ export function loadConfig(): Config {
       "Ubisoft2,Wavestone1,EgisGroup,VeoliaEnvironnementSA,GroupementMousquetaires,Accor,SGS"),
     leverCompanies: parseList(process.env.LEVER_COMPANIES, "qonto,heetch,brevo"),
     greenhouseCompanies: parseList(process.env.GREENHOUSE_COMPANIES, "doctolib,mirakl,dataiku"),
+    // Slugs Ashby vérifiés le 2026-06-13 (API stable) ; ce sont des sociétés tech
+    // mondiales -> le filtre France ne laisse passer que leurs rares postes FR.
+    ashbyCompanies: parseList(process.env.ASHBY_COMPANIES, "ramp,linear,plaid"),
     careerjetUserIp: process.env.CAREERJET_USER_IP || "127.0.0.1",
     careerjetUserAgent: process.env.CAREERJET_USER_AGENT || "JobSearcherBot/0.1",
     careerjetReferer: process.env.CAREERJET_REFERER || undefined,

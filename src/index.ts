@@ -3,6 +3,7 @@ import { serve } from "@hono/node-server";
 import { loadConfig } from "./config.js";
 import { openDb, purgeSeen } from "./db.js";
 import { AdzunaClient } from "./adzunaClient.js";
+import { createAshbyClient } from "./ashbyClient.js";
 import { AtsClient } from "./atsClient.js";
 import { CareerjetClient } from "./careerjetClient.js";
 import { FtClient } from "./ftClient.js";
@@ -55,6 +56,7 @@ async function main(): Promise<void> {
   if (cfg.smartrecruitersCompanies.length) ats.push(createSmartRecruitersClient(cfg.smartrecruitersCompanies));
   if (cfg.leverCompanies.length) ats.push(createLeverClient(cfg.leverCompanies));
   if (cfg.greenhouseCompanies.length) ats.push(createGreenhouseClient(cfg.greenhouseCompanies));
+  if (cfg.ashbyCompanies.length) ats.push(createAshbyClient(cfg.ashbyCompanies));
 
   await registerCommands(cfg);
   const client = createBot(cfg, db, ft, lba, adzuna, careerjet, ats);

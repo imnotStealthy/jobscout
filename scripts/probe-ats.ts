@@ -109,7 +109,28 @@ async function probeWorkday(tenant: string, host: string, board: string) {
   }
 }
 
+async function probeAshby(slug: string) {
+  const endpoint = `https://api.ashbyhq.com/posting-api/job-board/${slug}?includeCompensation=true`;
+  try {
+    const res = await fetch(endpoint, { headers: UA });
+    if (!res.ok) return report({ name: slug, ats: "Ashby", endpoint, status: res.status, count: 0, verdict: "REJECT", reason: "HTTP non-200" });
+    const d = (await res.json()) as { jobs?: { id?: string; title?: string; location?: string; secondaryLocations?: { location?: string }[]; jobUrl?: string }[] };
+    const jobs = d.jobs ?? [];
+    const frRe = /france|paris|lyon|bordeaux|nantes|lille|toulouse|marseille|rennes/i;
+    const fr = jobs.filter((j) => frRe.test([j.location, ...(j.secondaryLocations ?? []).map((s) => s.location)].join(" ")));
+    const j = fr[0] ?? jobs[0];
+    if (!jobs.length || !j) return report({ name: slug, ats: "Ashby", endpoint, status: res.status, count: 0, verdict: "REJECT", reason: "0 offre" });
+    report({
+      name: slug, ats: "Ashby", endpoint, status: res.status, count: jobs.length,
+      title: j.title, location: `${j.location} (${fr.length} FR)`, url: j.jobUrl, verdict: "OK",
+    });
+  } catch (err) {
+    report({ name: slug, ats: "Ashby", endpoint, status: (err as Error).message, count: 0, verdict: "REJECT", reason: "fetch error" });
+  }
+}
+
 for (const s of ["Ubisoft2", "Wavestone1", "EgisGroup", "VeoliaEnvironnementSA", "GroupementMousquetaires", "Accor", "SGS"]) await probeSmartRecruiters(s);
+for (const s of ["ramp", "linear", "plaid", "vercel", "figma"]) await probeAshby(s);
 for (const s of ["qonto", "manomano", "heetch", "gorgias", "spendesk", "algolia", "brevo"]) await probeLever(s);
 for (const s of ["doctolib", "mirakl", "malt", "dataiku", "blablacar", "backmarket"]) await probeGreenhouse(s);
 for (const s of ["deezer", "yousign", "papernest", "leocare", "pennylane"]) await probeTeamtailor(s);

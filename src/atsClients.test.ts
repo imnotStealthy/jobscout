@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ProfileRow } from "./db.js";
 import { detectContractLabel } from "./atsContract.js";
+import { ashbyToFtOffer, isFranceAshby } from "./ashbyClient.js";
 import { ghToFtOffer, isFranceLocation } from "./greenhouseClient.js";
 import { srToFtOffer } from "./smartrecruitersClient.js";
 import { leverToFtOffer } from "./leverClient.js";
@@ -112,6 +113,42 @@ describe("ghToFtOffer", () => {
   });
 });
 
+describe("ashbyToFtOffer", () => {
+  const job = {
+    id: "ba4a5f3e-aea0-422e",
+    title: "Software Engineer Intern",
+    employmentType: "Intern",
+    location: "Paris, France",
+    secondaryLocations: [{ location: "Remote (Europe)" }],
+    publishedAt: "2026-06-10T08:00:00Z",
+    jobUrl: "https://jobs.ashbyhq.com/plaid/ba4a5f3e-aea0-422e",
+    applyUrl: "https://jobs.ashbyhq.com/plaid/ba4a5f3e-aea0-422e/application",
+  };
+  it("mappe vers FtOffer avec jobUrl officielle et contrat détecté", () => {
+    const o = ashbyToFtOffer(job, "plaid");
+    expect(o?.id).toBe("ashby:ba4a5f3e-aea0-422e");
+    expect(o?.origineOffre?.urlOrigine).toBe("https://jobs.ashbyhq.com/plaid/ba4a5f3e-aea0-422e");
+    expect(o?.typeContratLibelle).toBe("Stage (Intern)");
+    expect(o?.lieuTravail?.libelle).toBe("Paris, France, Remote (Europe)");
+    expect(o?.dateCreation).toBe("2026-06-10T08:00:00Z");
+  });
+  it("retombe sur applyUrl si jobUrl absente, drop si aucune URL", () => {
+    expect(ashbyToFtOffer({ id: "x", title: "Offre", applyUrl: "https://jobs.ashbyhq.com/x/1" }, "plaid")?.origineOffre?.urlOrigine)
+      .toBe("https://jobs.ashbyhq.com/x/1");
+    expect(ashbyToFtOffer({ id: "y", title: "Offre" }, "plaid")).toBeNull();
+  });
+  it("id stable -> dédup identique entre deux fetches", () => {
+    expect(offerSeenKey(ashbyToFtOffer(job, "plaid")!))
+      .toBe(offerSeenKey(ashbyToFtOffer({ ...job }, "plaid")!));
+  });
+  it("filtre France sur location ou secondaryLocations", () => {
+    expect(isFranceAshby({ id: "1", location: "Paris" })).toBe(true);
+    expect(isFranceAshby({ id: "2", location: "New York, NY (HQ)" })).toBe(false);
+    expect(isFranceAshby({ id: "3", location: "Remote", secondaryLocations: [{ location: "Lyon" }] })).toBe(true);
+    expect(isFranceAshby({ id: "4", location: "London" })).toBe(false);
+  });
+});
+
 describe("postFilter sur offres ATS", () => {
   it("profil alternance garde l'offre Lever Apprenticeship, drop la CDI", () => {
     const p = profile({ keywords: JSON.stringify(["comptable", "alternance"]) });
@@ -136,5 +173,9 @@ describe("postFilter sur offres ATS", () => {
       id: "d", title: "Offre", absolute_url: "https://fr.indeed.com/viewjob?jk=1",
     }, "doctolib")!;
     expect(postFilter([gh], p, EXCLUDED)).toHaveLength(0);
+    const ashby = ashbyToFtOffer({
+      id: "e", title: "Offre", jobUrl: "https://glassdoor.com/job/1",
+    }, "plaid")!;
+    expect(postFilter([ashby], p, ["linkedin.com", "indeed", "glassdoor"])).toHaveLength(0);
   });
 });
