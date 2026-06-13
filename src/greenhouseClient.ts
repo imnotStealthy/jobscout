@@ -1,3 +1,4 @@
+import { AtsClient, fetchAtsJson } from "./atsClient.js";
 import type { FtOffer } from "./ftClient.js";
 import { contractLibelle, detectContractLabel } from "./atsContract.js";
 
@@ -15,7 +16,6 @@ export interface GreenhouseJob {
 }
 
 const BASE_URL = "https://boards-api.greenhouse.io/v1/boards";
-const CACHE_TTL_MS = 10 * 60 * 1000;
 // Les boards Greenhouse sont mondiaux : on ne garde que la France.
 const FR_LOCATION = /france|paris|lyon|bordeaux|nantes|lille|toulouse|marseille|rennes|strasbourg|grenoble|montpellier|nice/i;
 
@@ -49,31 +49,13 @@ export function ghToFtOffer(job: GreenhouseJob, companySlug: string): FtOffer | 
   };
 }
 
-export class GreenhouseClient {
-  private cache = new Map<string, { at: number; offers: FtOffer[] }>();
-
-  constructor(private companies: string[]) {}
-
-  async search(): Promise<FtOffer[]> {
-    const all: FtOffer[] = [];
-    for (const slug of this.companies) {
-      const cached = this.cache.get(slug);
-      if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
-        all.push(...cached.offers);
-        continue;
-      }
-      const res = await fetch(`${BASE_URL}/${slug}/jobs?content=true`, {
-        headers: { "User-Agent": "JobSearcherBot/0.1" },
-      });
-      if (!res.ok) throw new Error(`Greenhouse ${slug}: HTTP ${res.status}`);
-      const data = (await res.json()) as { jobs?: GreenhouseJob[] };
-      const offers = (data.jobs ?? [])
-        .filter((j) => isFranceLocation(j.location?.name))
-        .map((j) => ghToFtOffer(j, slug))
-        .filter((o): o is FtOffer => o !== null);
-      this.cache.set(slug, { at: Date.now(), offers });
-      all.push(...offers);
-    }
-    return all;
-  }
+export function createGreenhouseClient(companies: string[]): AtsClient {
+  return new AtsClient("Greenhouse", companies, async (slug) => {
+    const data = await fetchAtsJson(`Greenhouse ${slug}`,
+      `${BASE_URL}/${slug}/jobs?content=true`) as { jobs?: GreenhouseJob[] };
+    return (data.jobs ?? [])
+      .filter((j) => isFranceLocation(j.location?.name))
+      .map((j) => ghToFtOffer(j, slug))
+      .filter((o): o is FtOffer => o !== null);
+  });
 }

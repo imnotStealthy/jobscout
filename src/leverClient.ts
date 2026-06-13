@@ -1,3 +1,4 @@
+import { AtsClient, fetchAtsJson } from "./atsClient.js";
 import type { FtOffer } from "./ftClient.js";
 import { contractLibelle, detectContractLabel } from "./atsContract.js";
 
@@ -17,7 +18,6 @@ export interface LeverPosting {
 }
 
 const BASE_URL = "https://api.lever.co/v0/postings";
-const CACHE_TTL_MS = 10 * 60 * 1000;
 
 export function leverToFtOffer(p: LeverPosting, companySlug: string): FtOffer | null {
   if (!p.hostedUrl) return null; // URL d'origine obligatoire
@@ -35,31 +35,12 @@ export function leverToFtOffer(p: LeverPosting, companySlug: string): FtOffer | 
   };
 }
 
-export class LeverClient {
-  private cache = new Map<string, { at: number; offers: FtOffer[] }>();
-
-  constructor(private companies: string[]) {}
-
-  async search(): Promise<FtOffer[]> {
-    const all: FtOffer[] = [];
-    for (const slug of this.companies) {
-      const cached = this.cache.get(slug);
-      if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
-        all.push(...cached.offers);
-        continue;
-      }
-      const res = await fetch(`${BASE_URL}/${slug}?mode=json`, {
-        headers: { "User-Agent": "JobSearcherBot/0.1" },
-      });
-      if (!res.ok) throw new Error(`Lever ${slug}: HTTP ${res.status}`);
-      const data = (await res.json()) as LeverPosting[];
-      const offers = data
-        .filter((p) => (p.country ?? "").toUpperCase() === "FR")
-        .map((p) => leverToFtOffer(p, slug))
-        .filter((o): o is FtOffer => o !== null);
-      this.cache.set(slug, { at: Date.now(), offers });
-      all.push(...offers);
-    }
-    return all;
-  }
+export function createLeverClient(companies: string[]): AtsClient {
+  return new AtsClient("Lever", companies, async (slug) => {
+    const data = await fetchAtsJson(`Lever ${slug}`, `${BASE_URL}/${slug}?mode=json`) as LeverPosting[];
+    return data
+      .filter((p) => (p.country ?? "").toUpperCase() === "FR")
+      .map((p) => leverToFtOffer(p, slug))
+      .filter((o): o is FtOffer => o !== null);
+  });
 }

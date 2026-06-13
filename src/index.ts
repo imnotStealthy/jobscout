@@ -3,12 +3,13 @@ import { serve } from "@hono/node-server";
 import { loadConfig } from "./config.js";
 import { openDb, purgeSeen } from "./db.js";
 import { AdzunaClient } from "./adzunaClient.js";
+import { AtsClient } from "./atsClient.js";
 import { CareerjetClient } from "./careerjetClient.js";
 import { FtClient } from "./ftClient.js";
-import { GreenhouseClient } from "./greenhouseClient.js";
+import { createGreenhouseClient } from "./greenhouseClient.js";
 import { LbaClient } from "./lbaClient.js";
-import { LeverClient } from "./leverClient.js";
-import { SmartRecruitersClient } from "./smartrecruitersClient.js";
+import { createLeverClient } from "./leverClient.js";
+import { createSmartRecruitersClient } from "./smartrecruitersClient.js";
 import { pollAll } from "./poller.js";
 import { createBot, postOffer } from "./discord/bot.js";
 import { registerCommands } from "./discord/commands.js";
@@ -49,13 +50,14 @@ async function main(): Promise<void> {
   const lba = cfg.lbaApiToken ? new LbaClient(cfg.lbaApiToken) : null;
   const adzuna = cfg.adzunaAppId && cfg.adzunaAppKey ? new AdzunaClient(cfg.adzunaAppId, cfg.adzunaAppKey) : null;
   const careerjet = cfg.careerjetApiKey ? new CareerjetClient(cfg) : null;
-  const smartrecruiters = cfg.smartrecruitersCompanies.length
-    ? new SmartRecruitersClient(cfg.smartrecruitersCompanies) : null;
-  const lever = cfg.leverCompanies.length ? new LeverClient(cfg.leverCompanies) : null;
-  const greenhouse = cfg.greenhouseCompanies.length ? new GreenhouseClient(cfg.greenhouseCompanies) : null;
+  // Sources ATS actives (slug listés en config) ; nouvelle source = une entrée ici.
+  const ats: AtsClient[] = [];
+  if (cfg.smartrecruitersCompanies.length) ats.push(createSmartRecruitersClient(cfg.smartrecruitersCompanies));
+  if (cfg.leverCompanies.length) ats.push(createLeverClient(cfg.leverCompanies));
+  if (cfg.greenhouseCompanies.length) ats.push(createGreenhouseClient(cfg.greenhouseCompanies));
 
   await registerCommands(cfg);
-  const client = createBot(cfg, db, ft, lba, adzuna, careerjet, smartrecruiters, lever, greenhouse);
+  const client = createBot(cfg, db, ft, lba, adzuna, careerjet, ats);
   await client.login(cfg.discordBotToken);
 
   const api = createApi(cfg, ft);
@@ -67,7 +69,7 @@ async function main(): Promise<void> {
     if (polling) return;
     polling = true;
     try {
-      await pollAll(ft, lba, adzuna, careerjet, smartrecruiters, lever, greenhouse, db, cfg, (p, o, notify) => postOffer(client, p, o, notify));
+      await pollAll(ft, lba, adzuna, careerjet, ats, db, cfg, (p, o, notify) => postOffer(client, p, o, notify));
     } catch (err) {
       console.error("[poll] run failed:", (err as Error).message);
     } finally {

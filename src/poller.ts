@@ -1,12 +1,10 @@
 import type Database from "better-sqlite3";
 import type { Config } from "./config.js";
 import { AdzunaClient, AdzunaSearchParams } from "./adzunaClient.js";
+import { AtsClient } from "./atsClient.js";
 import { CareerjetClient, CareerjetSearchParams } from "./careerjetClient.js";
 import { FtClient, FtOffer, FtSearchParams, offerOriginUrl } from "./ftClient.js";
-import { GreenhouseClient } from "./greenhouseClient.js";
 import { LbaClient, LbaSearchParams } from "./lbaClient.js";
-import { LeverClient } from "./leverClient.js";
-import { SmartRecruitersClient } from "./smartrecruitersClient.js";
 import { deleteProfile, hasSeen, listEnabledProfiles, markSeen, ProfileRow } from "./db.js";
 import { isExcludedHost, normalize, safeHost } from "./hostFilter.js";
 
@@ -284,9 +282,7 @@ export async function runProfile(
   lba: LbaClient | null,
   adzuna: AdzunaClient | null,
   careerjet: CareerjetClient | null,
-  smartrecruiters: SmartRecruitersClient | null,
-  lever: LeverClient | null,
-  greenhouse: GreenhouseClient | null,
+  ats: AtsClient[],
   db: Database.Database,
   p: ProfileRow,
   excludedHosts: string[],
@@ -326,25 +322,11 @@ export async function runProfile(
   }
   // Sources ATS (tous contrats, cache 10 min côté client) : le ciblage
   // titre/contrat/dédup est entièrement délégué à postFilter + seen_offers.
-  if (smartrecruiters) {
+  for (const client of ats) {
     try {
-      for (const o of await smartrecruiters.search()) seen.set(offerSeenKey(o), o);
+      for (const o of await client.search()) seen.set(offerSeenKey(o), o);
     } catch (err) {
-      console.error(`[poll] profile ${p.id} SmartRecruiters query failed:`, (err as Error).message);
-    }
-  }
-  if (lever) {
-    try {
-      for (const o of await lever.search()) seen.set(offerSeenKey(o), o);
-    } catch (err) {
-      console.error(`[poll] profile ${p.id} Lever query failed:`, (err as Error).message);
-    }
-  }
-  if (greenhouse) {
-    try {
-      for (const o of await greenhouse.search()) seen.set(offerSeenKey(o), o);
-    } catch (err) {
-      console.error(`[poll] profile ${p.id} Greenhouse query failed:`, (err as Error).message);
+      console.error(`[poll] profile ${p.id} ${client.name} query failed:`, (err as Error).message);
     }
   }
   return filterRecentOffers(postFilter([...seen.values()], p, excludedHosts), maxAgeDays).filter(
@@ -396,15 +378,13 @@ export async function pollAll(
   lba: LbaClient | null,
   adzuna: AdzunaClient | null,
   careerjet: CareerjetClient | null,
-  smartrecruiters: SmartRecruitersClient | null,
-  lever: LeverClient | null,
-  greenhouse: GreenhouseClient | null,
+  ats: AtsClient[],
   db: Database.Database,
   cfg: Config,
   post: (p: ProfileRow, o: FtOffer, notify: boolean) => Promise<void>,
 ): Promise<void> {
   for (const p of listEnabledProfiles(db)) {
-    const fresh = await runProfile(ft, lba, adzuna, careerjet, smartrecruiters, lever, greenhouse, db, p, cfg.excludedHosts, cfg.offerMaxAgeDays);
+    const fresh = await runProfile(ft, lba, adzuna, careerjet, ats, db, p, cfg.excludedHosts, cfg.offerMaxAgeDays);
     await postFreshOffers(db, p, fresh, post);
     if (fresh.length) console.log(`[poll] profile ${p.id} (${p.label}): ${fresh.length} new offers`);
   }

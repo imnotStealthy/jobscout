@@ -29,6 +29,11 @@ const DEFAULT_EXCLUDED_HOSTS = [
   "jooble", "jobrapido", "neuvoo",
 ].join(",");
 
+// CSV d'env -> liste nettoyée (trim + drop vides).
+function parseList(raw: string | undefined, fallback: string): string[] {
+  return (raw ?? fallback).split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 function required(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`Missing env var: ${name}`);
@@ -49,6 +54,14 @@ function parsePollInterval(raw: string): { label: string; ms: number } {
   return { label: value, ms: hours * 60 * 60 * 1000 };
 }
 
+function parseOfferMaxAgeDays(raw: string): number {
+  const days = Number(raw);
+  if (!Number.isInteger(days) || days < 0 || days > 90) {
+    throw new Error("Invalid OFFER_MAX_AGE_DAYS: use an integer between 0 and 90");
+  }
+  return days;
+}
+
 export function loadConfig(): Config {
   const pollInterval = parsePollInterval(process.env.POLL_CRON ?? "1d");
   return {
@@ -59,25 +72,20 @@ export function loadConfig(): Config {
     adzunaAppKey: process.env.ADZUNA_APP_KEY || undefined,
     careerjetApiKey: process.env.CAREERJET_API_KEY || undefined,
     // Slugs vérifiés le 2026-06-12 (probe scripts/probe-ats.ts)
-    smartrecruitersCompanies: (process.env.SMARTRECRUITERS_COMPANIES
-      ?? "Ubisoft2,Wavestone1,EgisGroup,VeoliaEnvironnementSA,GroupementMousquetaires,Accor,SGS")
-      .split(",").map((s) => s.trim()).filter(Boolean),
-    leverCompanies: (process.env.LEVER_COMPANIES ?? "qonto,heetch,brevo")
-      .split(",").map((s) => s.trim()).filter(Boolean),
-    greenhouseCompanies: (process.env.GREENHOUSE_COMPANIES ?? "doctolib,mirakl,dataiku")
-      .split(",").map((s) => s.trim()).filter(Boolean),
+    smartrecruitersCompanies: parseList(process.env.SMARTRECRUITERS_COMPANIES,
+      "Ubisoft2,Wavestone1,EgisGroup,VeoliaEnvironnementSA,GroupementMousquetaires,Accor,SGS"),
+    leverCompanies: parseList(process.env.LEVER_COMPANIES, "qonto,heetch,brevo"),
+    greenhouseCompanies: parseList(process.env.GREENHOUSE_COMPANIES, "doctolib,mirakl,dataiku"),
     careerjetUserIp: process.env.CAREERJET_USER_IP || "127.0.0.1",
     careerjetUserAgent: process.env.CAREERJET_USER_AGENT || "JobSearcherBot/0.1",
     careerjetReferer: process.env.CAREERJET_REFERER || undefined,
     discordBotToken: required("DISCORD_BOT_TOKEN"),
     discordAppId: required("DISCORD_APP_ID"),
     discordGuildId: process.env.DISCORD_GUILD_ID || undefined,
-    corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "")
-      .split(",").map((s) => s.trim()).filter(Boolean),
-    excludedHosts: (process.env.EXCLUDED_HOSTS ?? DEFAULT_EXCLUDED_HOSTS)
-      .split(",").map((s) => s.trim()).filter(Boolean),
+    corsAllowedOrigins: parseList(process.env.CORS_ALLOWED_ORIGINS, ""),
+    excludedHosts: parseList(process.env.EXCLUDED_HOSTS, DEFAULT_EXCLUDED_HOSTS),
     seenRetentionDays: Number(process.env.SEEN_RETENTION_DAYS ?? 30),
-    offerMaxAgeDays: Number(process.env.OFFER_MAX_AGE_DAYS ?? 7),
+    offerMaxAgeDays: parseOfferMaxAgeDays(process.env.OFFER_MAX_AGE_DAYS ?? "30"),
     pollIntervalLabel: pollInterval.label,
     pollIntervalMs: pollInterval.ms,
     apiPort: Number(process.env.API_PORT ?? 8787),

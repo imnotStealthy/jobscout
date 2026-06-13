@@ -1,3 +1,4 @@
+import { AtsClient, fetchAtsJson } from "./atsClient.js";
 import type { FtOffer } from "./ftClient.js";
 import { contractLibelle, detectContractLabel } from "./atsContract.js";
 
@@ -16,7 +17,6 @@ export interface SmartRecruitersPosting {
 }
 
 const BASE_URL = "https://api.smartrecruiters.com/v1/companies";
-const CACHE_TTL_MS = 10 * 60 * 1000; // un poll multi-profils ne refetch pas chaque société
 
 export function srToFtOffer(p: SmartRecruitersPosting, companySlug: string): FtOffer {
   const detected = detectContractLabel(`${p.name ?? ""} ${p.typeOfEmployment?.id ?? ""} ${p.typeOfEmployment?.label ?? ""}`);
@@ -33,28 +33,10 @@ export function srToFtOffer(p: SmartRecruitersPosting, companySlug: string): FtO
   };
 }
 
-export class SmartRecruitersClient {
-  private cache = new Map<string, { at: number; offers: FtOffer[] }>();
-
-  constructor(private companies: string[]) {}
-
-  async search(): Promise<FtOffer[]> {
-    const all: FtOffer[] = [];
-    for (const slug of this.companies) {
-      const cached = this.cache.get(slug);
-      if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
-        all.push(...cached.offers);
-        continue;
-      }
-      const res = await fetch(`${BASE_URL}/${slug}/postings?country=fr&limit=100`, {
-        headers: { "User-Agent": "JobSearcherBot/0.1" },
-      });
-      if (!res.ok) throw new Error(`SmartRecruiters ${slug}: HTTP ${res.status}`);
-      const data = (await res.json()) as { content?: SmartRecruitersPosting[] };
-      const offers = (data.content ?? []).map((p) => srToFtOffer(p, slug));
-      this.cache.set(slug, { at: Date.now(), offers });
-      all.push(...offers);
-    }
-    return all;
-  }
+export function createSmartRecruitersClient(companies: string[]): AtsClient {
+  return new AtsClient("SmartRecruiters", companies, async (slug) => {
+    const data = await fetchAtsJson(`SmartRecruiters ${slug}`,
+      `${BASE_URL}/${slug}/postings?country=fr&limit=100`) as { content?: SmartRecruitersPosting[] };
+    return (data.content ?? []).map((p) => srToFtOffer(p, slug));
+  });
 }
